@@ -29,7 +29,7 @@ backups/
 .superpowers/
 
 # Lyrics cache and local API keys (never commit)
-lyrics/
+/lyrics/
 lyrics-cache/
 *.lyrics-cache
 *.apikey
