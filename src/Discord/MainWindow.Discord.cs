@@ -101,13 +101,6 @@ public partial class MainWindow
             (true, false) => "Напрямую",
             _ => "Через плагин",
         };
-        SyncPluginRow();
-    }
-
-    void SyncPluginRow()
-    {
-        DiscordPluginLabel.Text = VencordPluginConnected ? "Плагин Vencord" : "Плагин BetterDiscord";
-        DiscordPluginState.Text = _discord.IsBridgeConnected ? "подключён" : "для сообщений";
     }
 
     void DiscordPlugin_Click(object sender, RoutedEventArgs e)

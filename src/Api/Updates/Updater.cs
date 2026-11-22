@@ -1,6 +1,8 @@
 using System.Diagnostics;
 using System.IO;
+using System.Net;
 using System.Net.Http;
+using System.Text.RegularExpressions;
 using System.Reflection;
 using System.Security.Cryptography;
 using System.Text.Json;
@@ -33,8 +35,56 @@ sealed class Updater
     static readonly TimeSpan DownloadTimeout = TimeSpan.FromMinutes(10);
     static readonly TimeSpan CleanUpRetry = TimeSpan.FromSeconds(1);
     static readonly HttpClient Http;
-    internal static Task<string> ReadReleaseAsync(string repository, CancellationToken token) =>
-        Http.GetStringAsync($"https://api.github.com/repos/{repository}/releases/latest", token);
+    internal static async Task<string> ReadReleaseAsync(string repository, CancellationToken token, string assetName = AssetName)
+    {
+        if (!IsRepository(repository)) throw new ArgumentException("Invalid update repository.", nameof(repository));
+        using var response = await Http.GetAsync($"https://api.github.com/repos/{repository}/releases/latest", token);
+        bool rateLimited = response.StatusCode == HttpStatusCode.TooManyRequests
+            || response.StatusCode == HttpStatusCode.Forbidden
+                && response.Headers.TryGetValues("X-RateLimit-Remaining", out var remaining)
+                && remaining.Contains("0");
+        if (rateLimited) return await ReadPublicReleaseAsync(repository, assetName, token);
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadAsStringAsync(token);
+    }
+
+    static async Task<string> ReadPublicReleaseAsync(string repository, string assetName, CancellationToken token)
+    {
+        var latest = new Uri($"https://github.com/{repository}/releases/latest");
+        using var redirect = await Http.GetAsync(latest, token);
+        string tagPrefix = $"/{repository}/releases/tag/";
+        if (redirect.StatusCode != HttpStatusCode.Found || redirect.Headers.Location is not { } location
+            || !Uri.TryCreate(latest, location, out var release) || !IsHttps(release)
+            || release.Host != "github.com" || release.Query.Length != 0
+            || !release.AbsolutePath.StartsWith(tagPrefix, StringComparison.Ordinal))
+            throw new InvalidDataException("GitHub did not identify a public release.");
+
+        string tag = release.AbsolutePath[tagPrefix.Length..];
+        if (!Regex.IsMatch(tag, @"\Av?\d+(?:\.\d+){1,3}\z", RegexOptions.CultureInvariant))
+            throw new InvalidDataException("Unexpected public release tag.");
+
+        string assetsPage = $"https://github.com/{repository}/releases/expanded_assets/{tag}";
+        using var request = new HttpRequestMessage(HttpMethod.Get, assetsPage);
+        request.Headers.Accept.ParseAdd("text/html");
+        using var assetList = await Http.SendAsync(request, token);
+        assetList.EnsureSuccessStatusCode();
+        string html = await assetList.Content.ReadAsStringAsync(token);
+        // Tie the displayed digest to the exact asset name, never to the order of assets on the page.
+        string pattern = @"aria-label=""Copy to clipboard digest for " + Regex.Escape(assetName)
+            + @"""[^>]*\bvalue=""(sha256:[0-9a-fA-F]{64})""";
+        var digest = Regex.Match(html, pattern, RegexOptions.CultureInvariant, TimeSpan.FromSeconds(1));
+        if (!digest.Success) return JsonSerializer.Serialize(new { tag_name = tag, assets = Array.Empty<object>() });
+
+        var address = new Uri($"https://github.com/{repository}/releases/download/{tag}/{assetName}");
+        using var file = await OpenDownloadAsync(address, token, HttpMethod.Head);
+        file.EnsureSuccessStatusCode();
+        long size = file.Content.Headers.ContentLength ?? throw new InvalidDataException("Missing release asset size.");
+        return JsonSerializer.Serialize(new
+        {
+            tag_name = tag,
+            assets = new[] { new { name = assetName, browser_download_url = address.AbsoluteUri, digest = digest.Groups[1].Value, size } },
+        });
+    }
 
     static Updater()
     {
@@ -78,8 +128,7 @@ sealed class Updater
         try
         {
             using var timeout = new CancellationTokenSource(CheckTimeout);
-            using var document = JsonDocument.Parse(await Http.GetStringAsync(
-                $"https://api.github.com/repos/{Repository}/releases/latest", timeout.Token));
+            using var document = JsonDocument.Parse(await ReadReleaseAsync(Repository!, timeout.Token));
             JsonElement release = document.RootElement;
             string tag = release.GetProperty("tag_name").GetString()!;
             LatestVersion = Normalize(Version.Parse(tag.TrimStart('v')));
@@ -176,12 +225,13 @@ sealed class Updater
     internal static bool IsTrustedRedirect(Uri address) => IsHttps(address)
         && address.Host is "release-assets.githubusercontent.com" or "objects.githubusercontent.com";
 
-    internal static async Task<HttpResponseMessage> OpenDownloadAsync(Uri address, CancellationToken token)
+    internal static async Task<HttpResponseMessage> OpenDownloadAsync(Uri address, CancellationToken token, HttpMethod? method = null)
     {
         const int maxRedirects = 3;
         for (int redirects = 0; ; redirects++)
         {
-            HttpResponseMessage response = await Http.GetAsync(address, HttpCompletionOption.ResponseHeadersRead, token);
+            using var request = new HttpRequestMessage(method ?? HttpMethod.Get, address);
+            HttpResponseMessage response = await Http.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, token);
             if ((int)response.StatusCode is not (301 or 302 or 303 or 307 or 308)) return response;
             using (response)
             {

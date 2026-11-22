@@ -59,7 +59,7 @@ public partial class MainWindow : Window
         [View.Discord] = new(342, 250, 34),
         [View.DiscordVoice] = new(340, 296, 34),
         [View.DiscordMessages] = new(340, 298, 34),
-        [View.DiscordPlugin] = new(342, 236, 34),
+        [View.DiscordPlugin] = new(342, 328, 34),
         [View.Loading] = new(118, 34, 17),
     };
 

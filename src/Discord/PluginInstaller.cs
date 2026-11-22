@@ -7,6 +7,7 @@ namespace DynamicIsland;
 static class PluginInstaller
 {
     public const string FileName = "DynamicIslandDiscordBridge.plugin.js";
+    public const string VencordFileName = "DynamicIslandVencord.zip";
     const int MaxBytes = 1024 * 1024;
 
     static readonly string? Repository = Assembly.GetExecutingAssembly()
@@ -14,20 +15,20 @@ static class PluginInstaller
         .FirstOrDefault(attribute => attribute.Key == "PluginRepository")?.Value ?? Updater.Repository;
 
     public static bool Configured => Repository is { } repo && Updater.IsRepository(repo);
-    public static bool FileInstalled => File.Exists(Path.Combine(Environment.GetFolderPath(
-        Environment.SpecialFolder.ApplicationData), "BetterDiscord", "plugins", FileName));
+    public static string BetterDiscordPath => Path.Combine(Environment.GetFolderPath(
+        Environment.SpecialFolder.ApplicationData), "BetterDiscord", "plugins");
 
-    public static async Task<bool> DownloadAsync(string destination, Action<long, long> progress)
+    public static async Task<bool> DownloadAsync(string assetName, string destination, Action<long, long> progress)
     {
         if (!Configured) throw new InvalidOperationException("Plugin repository is not configured.");
         using var deadline = new CancellationTokenSource(TimeSpan.FromSeconds(40));
-        using var json = JsonDocument.Parse(await Updater.ReadReleaseAsync(Repository!, deadline.Token));
+        using var json = JsonDocument.Parse(await Updater.ReadReleaseAsync(Repository!, deadline.Token, assetName));
         var release = json.RootElement;
         var tag = release.GetProperty("tag_name").GetString()!;
         foreach (var entry in release.GetProperty("assets").EnumerateArray())
         {
-            if (entry.GetProperty("name").GetString() != FileName) continue;
-            var asset = Updater.ReadAsset(entry, tag, Repository!, FileName, MaxBytes);
+            if (entry.GetProperty("name").GetString() != assetName) continue;
+            var asset = Updater.ReadAsset(entry, tag, Repository!, assetName, MaxBytes);
             progress(0, asset.Size);
             using var response = await Updater.OpenDownloadAsync(asset.Address, deadline.Token);
             response.EnsureSuccessStatusCode();

@@ -11,8 +11,9 @@
     <AssemblyName>DynamicIsland</AssemblyName>
     <RootNamespace>DynamicIsland</RootNamespace>
     <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
-    <Version>1.31.0</Version>
-    <InformationalVersion>1.31.0</InformationalVersion>
+    <Version>1.31.1</Version>
+    <InformationalVersion>1.31.1</InformationalVersion>
+    <UpdateRepository Condition="'$(UpdateRepository)' == ''">shapezopm/DynamicIsland</UpdateRepository>
     <PublishReadyToRun>false</PublishReadyToRun>
     <EnableCompressionInSingleFile>false</EnableCompressionInSingleFile>
     <DefaultItemExcludes>$(DefaultItemExcludes);out/**;publish/**;backups/**;TestResults/**</DefaultItemExcludes>

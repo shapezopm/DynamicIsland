@@ -6,6 +6,12 @@ static partial class Settings
     static readonly int[] AvatarCounts = [3, 4, 5, 6];
     static readonly double[] MessageSeconds = [3.5, 6, 10];
 
+    public static string VencordSourceDirectory
+    {
+        get => Read(nameof(VencordSourceDirectory), "");
+        set => Write(nameof(VencordSourceDirectory), value, Microsoft.Win32.RegistryValueKind.String);
+    }
+
     static bool _discordEnabled = ReadSwitch(nameof(DiscordEnabled), false);
     static bool _discordMusicBubble = ReadSwitch(nameof(DiscordMusicBubble)), _discordMusicMini = ReadSwitch(nameof(DiscordMusicMini), false);
     static int _discordMusicState = Math.Clamp(Read(nameof(DiscordMusicState), _discordMusicMini ? (int)DiscordMusicState.Mini : (int)DiscordMusicState.Compact), 0, 2);

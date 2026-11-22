@@ -1,33 +1,34 @@
 # Graph Report - DynamicIsland-1.30.0  (2026-11-23)
 
 ## Corpus Check
-- 179 files · ~134,545 words
+- 179 files · ~135,166 words
 - Verdict: corpus is large enough that graph structure adds value.
 - Unclassified: 12 file(s) not represented in the graph (top: .otf 4, .ttf 4, (none) 3)
 
 ## Summary
-- 4203 nodes · 10619 edges · 214 communities (124 shown, 90 thin omitted)
-- Extraction: 90% EXTRACTED · 10% INFERRED · 0% AMBIGUOUS · INFERRED: 1034 edges (avg confidence: 0.85)
+- 4214 nodes · 10656 edges · 200 communities (122 shown, 78 thin omitted)
+- Extraction: 90% EXTRACTED · 10% INFERRED · 0% AMBIGUOUS · INFERRED: 1036 edges (avg confidence: 0.85)
 - Token cost: 0 input · 0 output
 
 ## Community Hubs (Navigation)
-- MainWindow
+- TrackSnapshot
 - Native
-- IntPtr
 - Window
 - Glyph
 - MainWindow.BuildWeatherHours
-- MainWindow.OnLoaded
 - ClipboardShelfCapture
+- system_windows
 - SourceApp
 - MediaService
 - Glass
 - Settings
 - MainWindow
 - Grid
+- MainWindow.StartShapeLoop
 - ObsService
-- TrackSnapshot
+- MainWindow.UpdateMiniIsland
 - Border
+- FrameworkElement
 - Border
 - DrawingContext
 - Digits
@@ -42,24 +43,24 @@
 - Task
 - Scrubber
 - PlaybackClock
-- ShelfTile
+- Motion.Ms
 - Build-TrackIdentityIndex.py
 - Icon
-- Segments
+- LyricsOffsetStore
 - Button
 - Goo
-- Stage
 - smtc-players.md
 - DynamicIslandDiscordBridge.plugin.js
 - Task
+- AreaPicker
 - Updater
 - Toggle
 - CoverFallback
-- AreaPicker
+- PlayerLine
 - steps
 - Point
 - Avatar
-- LyricsPresentation
+- LyricsResult
 - Equalizer
 - LyricsCandidate
 - MainWindow.BuildAddPage
@@ -75,48 +76,50 @@
 - LyricsNormalizer
 - Settings.Read
 - HoverPreview
-- LyricsOffsetStore
+- Uri
 - ActionPeer
-- CoreAudio.cs
 - Toggle
 - Uri
-- WeatherPlace
-- SpectrumService
+- AreaPicker
 - UniformGrid
 - ScaleTransform
 - GradientStop
 - PlayerBar
 - CatalogueLyricsProvider
 - LrclibOptions
+- DotMatrix
 - LyricsMatcher
 - MainWindow.PublishWeather
-- system_globalization
+- Gadget.cs
 - DllImport
 - SpacePlaybackHook
 - Canvas
 - Backdrop
 - TimeSpan
-- DateTime
+- MainWindow.UpdatePlayerLyrics
+- SpacePlaybackGesture
 - Ellipse
-- Puddle
-- AudioService
+- Stage
+- MainWindow
 - Geometry
 - Ring
 - TextBox
 - LyricsCache
-- MainWindow.ApplyShape
+- MainWindow
 - RotateTransform
 - ScrollViewer
 - LyricsResult
+- Updater.CheckAsync
 - TrackShapeBar
-- DelayedAction.Start
+- ShelfCaptureStore
 - Segments
 - ToggleButton
 - Cover
+- Visuals
 - LyricsCacheOptions
 - LyricChange
 - CompactLyric
-- ReadOnlySpan
+- Autostart
 - SeekPreviewKind
 - GapSlider
 - LookRows
@@ -141,54 +144,48 @@
 - WeatherHomeHit
 - TtmlParser.Parse
 - Lyric
+- Op
 - LyricFxPlan.Sample
 - DrawingSurfaces
+- FocusRing
+- MainWindow.SearchWeatherAsync
 - NetworkService
-- Brush
-- IMMDevice
-- LyricPreview
+- Link
+- CacheDocument
 - SoundCloudBrowser
-- Glyph
-- FormattedText
-- PointerLyric.BuildColumn
-- Motion.Ms
-- HelloInfo
-- Piece
-- App
+- MainWindow.Notify
+- Stage
+- DurationOrigin
+- App.Log
 - Grab
 - MainWindow
-- DurationOrigin
+- MediaKey
 - SoundCloudHeartReveal
 - Spring
-- AudioService.Sessions
-- youtube-preview-media-guard.user.js
-- App.Log
+- Piece
+- DiscordBridgeServer.Command
+- Symbol
 - Color
 - Gadget
 - Path
 - PointerLyric
 - TurnEase
-- Op
-- MainWindow.LyricsEditor_TextChanged
-- IAudioClient
-- DiscordBridgeServer
+- DiscordModels.cs
 - Link
 - SoundCloudLike
 - AdvanceStep
 - VoiceDeafenIcon
-- Link
 - MessageAvatar
-- Symbol
 - IsFocusUnsettled
 - WeatherTyping
 - ChipCorners
-- Motion.Delayed
+- MainWindow.ShowTransient
 - AccentColor
 - IsEqVisible
 
 ## God Nodes (most connected - your core abstractions)
-1. `Window` - 435 edges
-2. `MainWindow` - 329 edges
+1. `Window` - 436 edges
+2. `MainWindow` - 269 edges
 3. `DynamicIsland` - 155 edges
 4. `MediaService` - 91 edges
 5. `Native` - 89 edges
@@ -196,48 +193,48 @@
 7. `LyricsService` - 76 edges
 8. `TextBlock` - 73 edges
 9. `MainWindow` - 71 edges
-10. `Glyph` - 69 edges
+10. `MainWindow` - 70 edges
 
 ## Surprising Connections (you probably didn't know these)
 - `Dynamic Island для Vencord` --references--> `DynamicIslandDiscordBridge`  [INFERRED]
   src/Discord/Vencord/dynamicIslandBridge.desktop/README.md → src/Discord/Vencord/dynamicIslandBridge.desktop/bridge.js
 - `MainWindow` --inherits--> `Window`  [EXTRACTED]
-  src/Discord/MainWindow.Discord.cs → MainWindow.xaml
+  src/Discord/MainWindow.DiscordPlugin.cs → MainWindow.xaml
+- `SoundCloudBrowser` --inherits--> `Window`  [EXTRACTED]
+  src/Media/SoundCloudBrowser.cs → MainWindow.xaml
 - `Glass` --references--> `Window`  [EXTRACTED]
   src/UI/Effects/Glass.cs → MainWindow.xaml
 - `AreaPicker` --inherits--> `Window`  [EXTRACTED]
   src/Windows/AreaPicker.cs → MainWindow.xaml
-- `SoundCloudBrowser` --inherits--> `Window`  [EXTRACTED]
-  src/Media/SoundCloudBrowser.cs → MainWindow.xaml
 
 ## Import Cycles
 - None detected.
 
-## Communities (214 total, 90 thin omitted)
+## Communities (200 total, 78 thin omitted)
 
-### Community 0 - "MainWindow"
-Cohesion: 0.07
-Nodes (4): MainWindow, LookOverflow, UpdateNotesOverflow, Size
+### Community 0 - "TrackSnapshot"
+Cohesion: 0.14
+Nodes (7): ProviderSearchResult, NeedsRefresh, PreparedLyricsPool, TrackSnapshot, IdentityArtistAliases, IdentityPrimaryArtist, IdentityRequiresDuration
 
 ### Community 1 - "Native"
-Cohesion: 0.04
-Nodes (22): MaterialgramWindowMode, Native, CursorPosition, DispatcherQueueOptions, DISPLAYMODE, ForegroundWindow, InputMessageSource, IsCtrlDown (+14 more)
-
-### Community 2 - "IntPtr"
-Cohesion: 0.12
-Nodes (4): TaskbarHiddenOpacity, MonitorInfo, MediaWindow, ICompositorInterop
+Cohesion: 0.05
+Nodes (17): MaterialgramWindowMode, Native, CursorPosition, DispatcherQueueOptions, DISPLAYMODE, ForegroundWindow, InputMessageSource, IsCtrlDown (+9 more)
 
 ### Community 3 - "Window"
 Cohesion: 0.05
-Nodes (75): Content, Tag, AccentText, ArtistBig, BackdropText, BigDate, BigTimerLabel, CompactTrackAccentText (+67 more)
+Nodes (75): Content, Tag, AccentText, ArtistBig, BackdropText, BetterDiscordInstallPath, BigDate, BigTimerLabel (+67 more)
 
 ### Community 4 - "Glyph"
 Cohesion: 0.03
 Nodes (59): Glyph, Back, Bars, Battery, Bell, Bolt, Bulge, Check (+51 more)
 
+### Community 5 - "MainWindow.BuildWeatherHours"
+Cohesion: 0.13
+Nodes (3): SoundCloudHeartFill, WeatherWebData, SolidColorBrush
+
 ### Community 9 - "SourceApp"
-Cohesion: 0.09
-Nodes (4): SourceApp, Destination, SoundCloudPlayer, WindowProc
+Cohesion: 0.08
+Nodes (5): SourceApp, Destination, MediaWindow, SoundCloudPlayer, WindowProc
 
 ### Community 10 - "MediaService"
 Cohesion: 0.06
@@ -249,47 +246,39 @@ Nodes (6): Glass, Handle, IsOn, Pane, DesktopComposition, ICompositorDesktopInte
 
 ### Community 12 - "Settings"
 Cohesion: 0.10
-Nodes (18): Settings, DiscordAvatarCount, DiscordAvatars, DiscordDm, DiscordEnabled, DiscordEveryone, DiscordInGames, DiscordMention (+10 more)
+Nodes (19): Settings, DiscordAvatarCount, DiscordAvatars, DiscordDm, DiscordEnabled, DiscordEveryone, DiscordInGames, DiscordMention (+11 more)
 
 ### Community 13 - "MainWindow"
-Cohesion: 0.10
-Nodes (12): PlayerLine, DueAt, Middle, Row, Y, MainWindow, SeekDisplay, Lines (+4 more)
+Cohesion: 0.15
+Nodes (7): MainWindow, SeekDisplay, Lines, Plain, TrackShape, Wave, UseTrackShape
 
 ### Community 14 - "Grid"
 Cohesion: 0.04
 Nodes (54): ArtSpot, BrightnessView, BubbleBody, BubbleRecord, BubbleTimer, ChargeView, DiscordMessagesPage, DiscordMusicCover (+46 more)
 
 ### Community 16 - "ObsService"
-Cohesion: 0.11
+Cohesion: 0.14
 Nodes (9): ObsService, Busy, Bytes, Elapsed, IsReady, Paused, Recording, Scene (+1 more)
-
-### Community 17 - "TrackSnapshot"
-Cohesion: 0.15
-Nodes (7): ProviderSearchResult, NeedsRefresh, PreparedLyricsPool, TrackSnapshot, IdentityArtistAliases, IdentityPrimaryArtist, IdentityRequiresDuration
-
-### Community 18 - "Border"
-Cohesion: 0.09
-Nodes (3): WeatherActionBorder, FocusRing, InvokeAction
 
 ### Community 20 - "Border"
 Cohesion: 0.06
 Nodes (40): ActualHeight, ChipCorners, ToolTip, Visibility, AccentTiles, BackdropTiles, BrightFill, Bubble (+32 more)
 
 ### Community 21 - "DrawingContext"
-Cohesion: 0.20
-Nodes (3): Rect, SeekPreview, Kind
+Cohesion: 0.10
+Nodes (8): LyricMask, Rect, SeekPreview, Kind, BackdropPreview, Kind, Shades, LinearGradientBrush
 
 ### Community 22 - "Digits"
 Cohesion: 0.05
 Nodes (37): BigClock, BigTimer, BrightText, BubbleRecordText, BubbleShelfText, BubbleText, BubbleWeatherDegrees, ChargeText (+29 more)
 
 ### Community 23 - "Shelf"
-Cohesion: 0.07
-Nodes (15): Shelf, BITMAP, BITMAPINFOHEADER, IShellItemImageFactory, Item, IsPhoto, IsTextNote, Name (+7 more)
+Cohesion: 0.09
+Nodes (13): Shelf, BITMAP, BITMAPINFOHEADER, IShellItemImageFactory, Item, IsPhoto, IsTextNote, Name (+5 more)
 
 ### Community 24 - "DateTime"
-Cohesion: 0.06
-Nodes (26): WeatherWebData, HourSlot, Sky, Clear, Cloudy, Fog, Overcast, Rain (+18 more)
+Cohesion: 0.05
+Nodes (34): HourSlot, MiniComponent, All, Hours, Minutes, None, Seconds, Weather (+26 more)
 
 ### Community 26 - "View"
 Cohesion: 0.05
@@ -299,28 +288,32 @@ Nodes (40): View, Brightness, Charge, Discord, DiscordMessages, DiscordPlugin, D
 Cohesion: 0.12
 Nodes (32): Settings, Accent, AppVolume, Backdrop, CompactTrackAccent, Dots, Gap, Glass (+24 more)
 
+### Community 28 - "Point"
+Cohesion: 0.16
+Nodes (4): Liquid, Drop, At, Style
+
 ### Community 29 - "LineBar"
-Cohesion: 0.11
+Cohesion: 0.12
 Nodes (13): LineBar, Column, Center, Left, Raised, Right, Rise, Text (+5 more)
 
 ### Community 30 - "LyricsSources.Create"
-Cohesion: 0.06
-Nodes (19): BetterLyricsProvider, LiriQoProvider, ILyricsProvider, IProgressiveLyricsProvider, LrclibProvider, RequestResult, LrclibRequestCoordinator, LrcMuxProvider (+11 more)
+Cohesion: 0.07
+Nodes (18): BetterLyricsProvider, LiriQoProvider, ILyricsProvider, IProgressiveLyricsProvider, LrclibProvider, RequestResult, LrclibRequestCoordinator, LrcMuxProvider (+10 more)
 
 ### Community 31 - "Task"
-Cohesion: 0.07
-Nodes (13): ChatMessage, DeepLink, DiscordUser, MessageAttachment, MessageAuthor, VoiceChannel, VoiceMember, VoiceState (+5 more)
+Cohesion: 0.11
+Nodes (6): DiscordUser, DiscordRpcClient, InCall, IsConnected, Me, Voice
 
 ### Community 32 - "Scrubber"
-Cohesion: 0.22
+Cohesion: 0.19
 Nodes (5): Scrubber, Maximum, Minimum, Step, Value
 
 ### Community 34 - "PlaybackClock"
 Cohesion: 0.21
 Nodes (7): PlaybackClock, HasPosition, IsPlaying, LastTimelineReliable, Position, Rate, Stalled
 
-### Community 35 - "ShelfTile"
-Cohesion: 0.28
+### Community 35 - "Motion.Ms"
+Cohesion: 0.12
 Nodes (3): ShelfOverflow, ShelfTile, Item
 
 ### Community 36 - "Build-TrackIdentityIndex.py"
@@ -333,19 +326,15 @@ Nodes (27): AccentChevron, BackdropChevron, BrightIcon, BubbleWeatherIcon, Compa
 
 ### Community 39 - "Button"
 Cohesion: 0.07
-Nodes (28): DiscordPluginDownload, DiscordPluginRow, GapRow, LyricsDiagnosticsCopy, LyricsEditorReset, LyricsSourceDiagnosticAction, LyricsSourceEdit, LyricsSourceOriginal (+20 more)
+Nodes (28): DiscordPluginRow, GapRow, LyricsDiagnosticsCopy, LyricsEditorReset, LyricsSourceDiagnosticAction, LyricsSourceEdit, LyricsSourceOriginal, LyricsSourceRetry (+20 more)
 
 ### Community 40 - "Goo"
-Cohesion: 0.16
-Nodes (4): Goo, BubbleInside, Light, PillInside
-
-### Community 41 - "Stage"
-Cohesion: 0.33
-Nodes (6): Stage, Failed, Loading, NoPlace, Off, Ready
+Cohesion: 0.07
+Nodes (15): Glyph, Center, Effect, Fill, Glow, Index, Shade, Solid (+7 more)
 
 ### Community 42 - "smtc-players.md"
-Cohesion: 0.07
-Nodes (16): Галерея DynamicIsland, Островок в движении, Экраны, Провайдеры, Тексты песен и источники, Медиаплееры Windows, Dynamic Island для Windows, Запуск и сборка (+8 more)
+Cohesion: 0.08
+Nodes (20): Галерея DynamicIsland, Островок в движении, Экраны, Провайдеры, Тексты песен и источники, Медиаплееры Windows, Dynamic Island для Windows, Запуск и сборка (+12 more)
 
 ### Community 43 - "DynamicIslandDiscordBridge.plugin.js"
 Cohesion: 0.15
@@ -355,37 +344,45 @@ Nodes (25): avatarOf(), connect(), DEFAULTS, discordVersion(), err(), getSetting
 Cohesion: 0.09
 Nodes (14): LyricsSearchPreference, LyricsSearchPreferences, LyricsService, Candidates, Diagnostics, HasManualSelection, IsOff, IsPending (+6 more)
 
+### Community 46 - "AreaPicker"
+Cohesion: 0.08
+Nodes (3): LyricsEdit, AreaPicker, Picked
+
 ### Community 47 - "Updater"
-Cohesion: 0.06
-Nodes (27): Updater, CurrentVersion, DownloadedBytes, ExePath, LatestVersion, Notes, OldPath, Percent (+19 more)
+Cohesion: 0.13
+Nodes (12): Updater, CurrentVersion, DownloadedBytes, ExePath, LatestVersion, Notes, OldPath, Percent (+4 more)
+
+### Community 50 - "PlayerLine"
+Cohesion: 0.15
+Nodes (5): PlayerLine, DueAt, Middle, Row, Y
 
 ### Community 51 - "steps"
 Cohesion: 0.09
 Nodes (21): GH_TOKEN, TAG, UPDATE_REPOSITORY, jobs, release, name, on, push (+13 more)
 
 ### Community 52 - "Point"
-Cohesion: 0.10
+Cohesion: 0.09
 Nodes (15): WeatherGesture, Active, Delta, Kind, Motion, City, Close, Days (+7 more)
 
 ### Community 53 - "Avatar"
-Cohesion: 0.05
-Nodes (34): Avatar, Dimmed, Label, Live, Source, Speaking, Status, AvatarStatus (+26 more)
+Cohesion: 0.06
+Nodes (31): Avatar, Dimmed, Label, Live, Source, Speaking, Status, AvatarStatus (+23 more)
 
-### Community 54 - "LyricsPresentation"
-Cohesion: 0.17
-Nodes (5): LyricsContentCleaner, LyricsPresentation, CanOpenEditor, Credits, RetryTooltip
+### Community 54 - "LyricsResult"
+Cohesion: 0.08
+Nodes (14): LyricsContentCleaner, LyricsResult, CacheSource, Empty, ErrorCode, MatchEvidence, ReasonCodes, RetryAt (+6 more)
 
 ### Community 55 - "Equalizer"
-Cohesion: 0.11
-Nodes (9): BandMeter, Heights, Equalizer, Bars, Dots, Few, Open, Aura (+1 more)
+Cohesion: 0.07
+Nodes (15): SpectrumLevels, Moved, this[], BandMeter, Heights, Equalizer, Bars, Dots (+7 more)
 
 ### Community 56 - "LyricsCandidate"
-Cohesion: 0.17
-Nodes (9): ProviderJson, LyricsDocumentIdentity, LyricsCandidate, HasValidSync, ProviderIdentityVerified, SourceUrl, TimingWarnings, Upstream (+1 more)
+Cohesion: 0.11
+Nodes (10): ProviderJson, LyricsDocumentIdentity, LyricsCandidate, HasValidSync, ProviderIdentityVerified, SourceUrl, TimingWarnings, Upstream (+2 more)
 
 ### Community 57 - "MainWindow.BuildAddPage"
-Cohesion: 0.10
-Nodes (9): LyricMask, LyricsPresentationControls, Digits, BlurRadius, RollDown, Text, TravelDistance, WeatherSearchCursor (+1 more)
+Cohesion: 0.15
+Nodes (6): Digits, BlurRadius, RollDown, Text, TravelDistance, WeatherSearchCursor
 
 ### Community 59 - "DynamicIslandDiscordBridge"
 Cohesion: 0.10
@@ -400,11 +397,11 @@ Cohesion: 0.09
 Nodes (22): BubbleShelf, BubbleShelfCount, BubbleWeather, DiscordMusicInfo, IdleComponents, IdleWeather, InfoBatRow, InfoHeadsetRow (+14 more)
 
 ### Community 62 - "DiscordService"
-Cohesion: 0.10
+Cohesion: 0.07
 Nodes (13): DiscordService, ConnectionMode, DiscordVersion, InCall, IsBridgeConnected, IsRpcConnected, JoinedAt, Linked (+5 more)
 
 ### Community 63 - "Spring.Snap"
-Cohesion: 0.14
+Cohesion: 0.12
 Nodes (3): FrameLoop, Running, RowList
 
 ### Community 64 - "LyricSource"
@@ -416,48 +413,36 @@ Cohesion: 0.14
 Nodes (11): SeekHover, Lift, Magnifier, Wave, WaveBar, Amplitude, Energy, Fill (+3 more)
 
 ### Community 66 - "PreserveSig"
-Cohesion: 0.13
-Nodes (3): IAudioEndpointVolume, IAudioSessionControl2, ISimpleAudioVolume
+Cohesion: 0.05
+Nodes (19): AudioService, Device, Output, AudioEndpoint, IAudioClient, IAudioEndpointVolume, IAudioMeterInformation, IAudioSessionControl2 (+11 more)
 
 ### Community 67 - "Panel"
 Cohesion: 0.08
 Nodes (24): Panel, Discord, DiscordMessages, DiscordPlugin, DiscordVoice, Look, Lyrics, LyricsManual (+16 more)
 
 ### Community 68 - "LyricsNormalizer"
-Cohesion: 0.06
-Nodes (25): LyricsSecondaryQueries, LyricsArtistAliases, LyricsNormalizer, LyricsQuery, Artist, Title, LyricsQueryKind, ArtistSplit (+17 more)
+Cohesion: 0.05
+Nodes (26): LyricsSecondaryQueries, AvatarImages, LyricsArtistAliases, LyricsNormalizer, LyricsQuery, Artist, Title, LyricsQueryKind (+18 more)
 
 ### Community 69 - "Settings.Read"
 Cohesion: 0.17
 Nodes (7): Shelf, TimerLastMinutes, TimerPresets, TimerPresetSlot, WeatherCities, WeatherHome, WeatherPlace
 
 ### Community 70 - "HoverPreview"
-Cohesion: 0.18
-Nodes (7): Hover, Disc, Flow, Magnet, HoverPreview, Kind, Waypoint
-
-### Community 73 - "CoreAudio.cs"
-Cohesion: 0.26
-Nodes (5): Output, IPropertyStore, PropertyKey, PropertyStoreReader, PropVariant
+Cohesion: 0.10
+Nodes (8): Hover, Disc, Flow, Magnet, HoverPreview, Kind, Waypoint, Puddle
 
 ### Community 74 - "Toggle"
 Cohesion: 0.08
 Nodes (25): AppVolumeSwitch, AutostartSwitch, DiscordDmSwitch, DiscordEnabledSwitch, DiscordEveryoneSwitch, DiscordInGamesSwitch, DiscordMentionSwitch, DiscordMovesSwitch (+17 more)
 
-### Community 75 - "Uri"
-Cohesion: 0.16
-Nodes (3): SoundCloudWaveform, Profile, TrackData
-
-### Community 76 - "WeatherPlace"
-Cohesion: 0.11
-Nodes (8): WeatherLocation, WeatherPlace, DisplayName, Valid, WeatherService, Now, PlaceName, State
-
-### Community 77 - "SpectrumService"
-Cohesion: 0.14
-Nodes (3): IAudioCaptureClient, SpectrumService, Active
+### Community 77 - "AreaPicker"
+Cohesion: 0.15
+Nodes (4): IAudioCaptureClient, SpectrumAnalyzer, SpectrumService, Active
 
 ### Community 78 - "UniformGrid"
-Cohesion: 0.15
-Nodes (13): AccentStrip, BackdropStrip, CompactTrackAccentStrip, HoverStrip, LyricChangeStrip, LyricFxStrip, LyricsSourceActions, SeekAccentStrip (+5 more)
+Cohesion: 0.14
+Nodes (14): AccentStrip, BackdropStrip, CompactTrackAccentStrip, DiscordPluginDownload, HoverStrip, LyricChangeStrip, LyricFxStrip, LyricsSourceActions (+6 more)
 
 ### Community 79 - "ScaleTransform"
 Cohesion: 0.07
@@ -472,32 +457,32 @@ Cohesion: 0.27
 Nodes (3): PlayerBar, POINT, Reading
 
 ### Community 82 - "CatalogueLyricsProvider"
-Cohesion: 0.12
+Cohesion: 0.13
 Nodes (6): CatalogueLyricsProvider, ProviderId, Site, Source, LyricsRemoteHttp, YouTubeMusicLyricsProvider
 
 ### Community 83 - "LrclibOptions"
 Cohesion: 0.20
 Nodes (10): LrclibOptions, DefaultCooldown, MaxBodyBytes, MaxCandidates, MaxRequests, RefinePlain, RequestSpacing, RequestTimeout (+2 more)
 
+### Community 84 - "DotMatrix"
+Cohesion: 0.20
+Nodes (3): DotMatrix, Column, Rounding
+
 ### Community 86 - "LyricsMatcher"
 Cohesion: 0.10
 Nodes (11): LyricsIdentityHypothesis, RequiresConfirmation, RequiresDuration, LyricsMatch, LyricsMatcher, Scored, LyricsMatchEvidence, PreparedLyricsCandidate (+3 more)
 
 ### Community 87 - "MainWindow.PublishWeather"
-Cohesion: 0.18
-Nodes (3): WeatherCityView, HomeFirst, WeatherCities
+Cohesion: 0.11
+Nodes (10): ShowSeparateWeather, WeatherCityView, HomeFirst, WeatherCities, WeatherPlace, Valid, WeatherService, Now (+2 more)
 
-### Community 88 - "system_globalization"
-Cohesion: 0.09
+### Community 88 - "Gadget.cs"
+Cohesion: 0.18
 Nodes (7): Откуда берутся картинки, Структура DynamicIsland, net8.0-windows10.0.19041.0, Microsoft.Data.Sqlite (8.0.32), Microsoft.Web.WebView2 (1.0.3537.50), ZXing.Net (0.16.11), Microsoft.NET.Sdk
 
 ### Community 89 - "DllImport"
-Cohesion: 0.26
-Nodes (3): QrReader, BITMAPINFOHEADER, Desktop
-
-### Community 90 - "SpacePlaybackHook"
-Cohesion: 0.12
-Nodes (7): SpacePlaybackGesture, Result, Consume, Pass, Toggle, SpacePlaybackHook, HookProc
+Cohesion: 0.13
+Nodes (5): TaskbarHiddenOpacity, MonitorInfo, QrReader, BITMAPINFOHEADER, Desktop
 
 ### Community 91 - "Canvas"
 Cohesion: 0.25
@@ -508,20 +493,24 @@ Cohesion: 0.40
 Nodes (5): Backdrop, Glow, Matrix, MatrixAndStars, Stars
 
 ### Community 93 - "TimeSpan"
-Cohesion: 0.15
-Nodes (7): LyricTiming, FinalLine, LrcParseResult, TrackDuration, CanMatch, IsKnown, Unknown
+Cohesion: 0.17
+Nodes (6): LyricTiming, LrcParseResult, TrackDuration, CanMatch, IsKnown, Unknown
 
-### Community 95 - "DateTime"
-Cohesion: 0.15
-Nodes (9): MiniComponent, All, Hours, Minutes, None, Seconds, Weather, Weekday (+1 more)
+### Community 95 - "SpacePlaybackGesture"
+Cohesion: 0.22
+Nodes (5): SpacePlaybackGesture, Result, Consume, Pass, Toggle
 
 ### Community 96 - "Ellipse"
 Cohesion: 0.20
 Nodes (10): BubbleRecordDot, DiscordDot, RecordBigDot, RecordDot, RecordPauseDisc, Ring, TimerDisc, VoiceDeafenDisc (+2 more)
 
-### Community 99 - "AudioService"
-Cohesion: 0.27
-Nodes (3): AudioService, Device, IAudioMeterInformation
+### Community 97 - "Stage"
+Cohesion: 0.25
+Nodes (8): Stage, Available, Checking, Failed, Idle, Latest, Loading, Unconfigured
+
+### Community 99 - "MainWindow"
+Cohesion: 0.06
+Nodes (3): MainWindow, LookOverflow, UpdateNotesOverflow
 
 ### Community 101 - "Ring"
 Cohesion: 0.29
@@ -531,9 +520,9 @@ Nodes (7): BigRing, BubbleRing, DiscordPluginRing, LoadingRing, TimerRing, Updat
 Cohesion: 0.33
 Nodes (6): LyricsEditor, LyricsManualArtist, LyricsManualTitle, LyricsSourceDiagnostics, WeatherSearch, TextBox
 
-### Community 103 - "LyricsCache"
-Cohesion: 0.09
-Nodes (12): LyricsCache, CacheDocument, ByteSize, CreatedUtc, ExpiresUtc, Format, Key, NormalizationVersion (+4 more)
+### Community 104 - "MainWindow"
+Cohesion: 0.06
+Nodes (7): MainWindow, VencordInstallDirectory, VencordPluginConnected, IsMediaActive, MediaSpot, Values, PillShape
 
 ### Community 105 - "RotateTransform"
 Cohesion: 0.40
@@ -544,8 +533,12 @@ Cohesion: 0.40
 Nodes (5): LyricsSourceScroll, PART_ContentHost, PlayerPlainScroll, WeatherCitiesScroll, ScrollViewer
 
 ### Community 107 - "LyricsResult"
-Cohesion: 0.06
-Nodes (30): LyricsDiagnosticEntry, Providers, LyricsDiagnostics, LyricsProviderDiagnostic, LyricsResult, CacheSource, Empty, ErrorCode (+22 more)
+Cohesion: 0.09
+Nodes (21): LyricsDiagnosticEntry, Providers, LyricsDiagnostics, LyricsProviderDiagnostic, LyricsStatus, Ambiguous, AwaitingVerification, Disabled (+13 more)
+
+### Community 108 - "Updater.CheckAsync"
+Cohesion: 0.31
+Nodes (3): PluginInstaller, BetterDiscordPath, Configured
 
 ### Community 112 - "Segments"
 Cohesion: 0.33
@@ -564,8 +557,12 @@ Cohesion: 0.50
 Nodes (4): LyricChange, Drum, Smooth, Wave
 
 ### Community 118 - "CompactLyric"
-Cohesion: 0.09
-Nodes (13): CompactLyric, Centring, EffectStrength, IsEntered, IslandWidth, Offset, Pose, Progress (+5 more)
+Cohesion: 0.06
+Nodes (20): CompactLyric, Centring, Cluster, Pieces, EffectStrength, IsEntered, IslandWidth, Offset (+12 more)
+
+### Community 119 - "Autostart"
+Cohesion: 0.50
+Nodes (3): Autostart, Enabled, StartupCommand
 
 ### Community 120 - "SeekPreviewKind"
 Cohesion: 0.29
@@ -611,45 +608,45 @@ Nodes (3): DiscordMusicGlow, Glow, Aura
 Cohesion: 0.12
 Nodes (5): Lyric, EffectStrength, EffectVisible, Tempo, TextEffect
 
+### Community 144 - "Op"
+Cohesion: 0.29
+Nodes (7): Op, Event, Hello, Identified, Identify, Request, RequestResponse
+
 ### Community 145 - "LyricFxPlan.Sample"
-Cohesion: 0.14
+Cohesion: 0.13
 Nodes (10): LyricFx, Glow, Lift, Off, Shimmer, LyricFxFrame, LyricFxLetter, LyricFxPlan (+2 more)
 
 ### Community 146 - "DrawingSurfaces"
-Cohesion: 0.11
-Nodes (6): DrawingSurfaces, Box, ICompositionDrawingSurfaceInterop, Offset, SetMultithreadProtectedCall, UpdateSubresourceCall
+Cohesion: 0.09
+Nodes (7): DrawingSurfaces, Box, ICompositionDrawingSurfaceInterop, ICompositorInterop, Offset, SetMultithreadProtectedCall, UpdateSubresourceCall
 
 ### Community 149 - "NetworkService"
 Cohesion: 0.23
 Nodes (3): NetworkService, State, Tunnels
 
-### Community 151 - "Brush"
-Cohesion: 0.09
-Nodes (11): SpectrumLevels, Moved, this[], BackdropPreview, Kind, Star, Shades, StarField (+3 more)
+### Community 151 - "Link"
+Cohesion: 0.40
+Nodes (5): Link, Closed, Disabled, Ready, Refused
 
-### Community 152 - "IMMDevice"
-Cohesion: 0.25
-Nodes (4): AudioEndpoint, IMMDevice, IMMDeviceEnumerator, MMDeviceEnumeratorCom
+### Community 152 - "CacheDocument"
+Cohesion: 0.22
+Nodes (9): CacheDocument, ByteSize, CreatedUtc, ExpiresUtc, Format, Key, NormalizationVersion, Result (+1 more)
 
-### Community 156 - "Glyph"
-Cohesion: 0.18
-Nodes (9): RowSlide, Glyph, Center, Effect, Fill, Glow, Index, Shade (+1 more)
-
-### Community 157 - "FormattedText"
-Cohesion: 0.18
-Nodes (5): Cluster, Pieces, Piece, Glyphs, Index
-
-### Community 159 - "PointerLyric.BuildColumn"
-Cohesion: 0.10
-Nodes (9): Letter, Line, IsLeaving, LeftAt, Scroll, Seconds, StartedAt, Word (+1 more)
-
-### Community 160 - "Motion.Ms"
-Cohesion: 0.12
+### Community 160 - "MainWindow.Notify"
+Cohesion: 0.05
 Nodes (6): Countdown, IsActive, IsRunning, Remaining, RemainingShare, Total
 
-### Community 167 - "App"
-Cohesion: 0.25
-Nodes (3): App, Application, App
+### Community 163 - "Stage"
+Cohesion: 0.33
+Nodes (6): Stage, Failed, Loading, NoPlace, Off, Ready
+
+### Community 164 - "DurationOrigin"
+Cohesion: 0.40
+Nodes (5): DurationOrigin, LyricsEstimate, MediaSession, ProgressEstimate, Unknown
+
+### Community 167 - "App.Log"
+Cohesion: 0.13
+Nodes (4): App, Application, App, Alarm
 
 ### Community 168 - "Grab"
 Cohesion: 0.40
@@ -657,43 +654,39 @@ Nodes (5): Grab, Held, Lean, None, Pull
 
 ### Community 169 - "MainWindow"
 Cohesion: 0.03
-Nodes (17): MainWindow, DiscordActive, ShowsVoice, DiscordNormalMusic, WantsDiscordMusic, VencordPluginConnected, IsLyricSettling, ShowShelfCount (+9 more)
+Nodes (14): MainWindow, DiscordActive, ShowsVoice, DiscordNormalMusic, WantsDiscordMusic, IsLyricSettling, ShowShelfCount, HiddenByFullscreen (+6 more)
 
-### Community 170 - "DurationOrigin"
+### Community 170 - "MediaKey"
 Cohesion: 0.40
-Nodes (5): DurationOrigin, LyricsEstimate, MediaSession, ProgressEstimate, Unknown
+Nodes (5): MediaKey, NextTrack, PreviousTrack, VolumeDown, VolumeUp
 
 ### Community 172 - "Spring"
-Cohesion: 0.11
-Nodes (13): Spring, Damping, Stiffness, Target, Value, Velocity, Blob, At (+5 more)
+Cohesion: 0.08
+Nodes (13): Spring, Damping, Stiffness, Target, Value, Velocity, Segments, Labels (+5 more)
 
-### Community 175 - "youtube-preview-media-guard.user.js"
-Cohesion: 0.53
-Nodes (4): get(), isVideoPage(), set(), syncRoute()
+### Community 174 - "DiscordBridgeServer.Command"
+Cohesion: 0.10
+Nodes (5): DiscordBridgeServer, Connection, Socket, IsConnected, Port
 
 ### Community 177 - "Color"
-Cohesion: 0.09
-Nodes (7): LyricFxPaint, Outline, CoverPalette, DotMatrix, Column, Rounding, Shimmer
+Cohesion: 0.08
+Nodes (7): LyricFxPaint, Outline, MediaSessionSelection, CoverPalette, Aura, Patch, Shimmer
 
 ### Community 178 - "Gadget"
-Cohesion: 0.13
-Nodes (7): Headset, Gadget, Model, Earbuds, Headphones, Speaker, Turn
+Cohesion: 0.18
+Nodes (7): Motion, Gadget, Model, Earbuds, Headphones, Speaker, Turn
 
 ### Community 180 - "Path"
 Cohesion: 0.25
 Nodes (8): PauseIcon, PlayIcon, RecordPauseIcon, RecordResumeIcon, Shadow, TimerPauseIcon, TimerPlayIcon, Path
 
 ### Community 181 - "PointerLyric"
-Cohesion: 0.10
-Nodes (10): PointerLyric, Below, Gap, HalfHeight, Handle, InColumn, Now, Pose (+2 more)
+Cohesion: 0.06
+Nodes (18): PointerLyric, Below, Gap, HalfHeight, Handle, InColumn, Letter, Line (+10 more)
 
-### Community 183 - "Op"
-Cohesion: 0.29
-Nodes (7): Op, Event, Hello, Identified, Identify, Request, RequestResponse
-
-### Community 186 - "DiscordBridgeServer"
-Cohesion: 0.17
-Nodes (5): DiscordBridgeServer, Connection, Socket, IsConnected, Port
+### Community 186 - "DiscordModels.cs"
+Cohesion: 0.16
+Nodes (8): ChatMessage, DeepLink, HelloInfo, MessageAttachment, MessageAuthor, VoiceChannel, VoiceMember, VoiceState
 
 ### Community 188 - "Link"
 Cohesion: 0.40
@@ -707,29 +700,25 @@ Nodes (7): SoundCloudLike, Liked, Pending, SignInRequired, TrackButtonMissing, U
 Cohesion: 0.67
 Nodes (3): VoiceDeafenIcon, VoiceMuteIcon, VoiceIcon
 
-### Community 197 - "Link"
-Cohesion: 0.40
-Nodes (5): Link, Closed, Disabled, Ready, Refused
-
 ## Knowledge Gaps
-- **608 isolated node(s):** `DiscordActive`, `ShowsVoice`, `VencordPluginConnected`, `SystemSlot`, `LookOverflow` (+603 more)
-  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 965 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
-- **90 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **609 isolated node(s):** `MainWindow`, `Content`, `Track`, `Tag`, `Goo` (+604 more)
+  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 967 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
+- **78 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `MainWindow` connect `MainWindow` to `MainWindow`, `Native`, `IntPtr`, `Window`, `MainWindow.BuildWeatherHours`, `MainWindow.OnLoaded`, `ClipboardShelfCapture`, `system_windows`, `Glass`, `MainWindow`, `MainWindow.StartShapeLoop`, `ObsService`, `Border`, `FrameworkElement`, `MainWindow.RefreshWeatherCities`, `Shelf`, `Brush`, `DynamicIsland`, `SoundCloudBrowser`, `Spring.Advance`, `Point`, `View`, `MediaService.SendCommandAsync`, `MainWindow.UpdateTargets`, `Grab`, `Spring`, `RoutedEventArgs`, `Updater`, `App.Log`, `Gadget`, `WeatherActionBorder.cs`, `PointerLyric`, `MainWindow.BuildAddPage`, `PreserveSig`, `Panel`, `LyricsNormalizer`, `LyricsOffsetStore`, `Uri`, `WeatherPlace`, `MainWindow.UpdatePlayerLyrics`, `ChipCorners`, `MainWindow.PublishWeather`, `Motion.Delayed`, `system_globalization`, `TimeSpan`, `MainWindow.WireWeatherPane`, `DateTime`, `MainWindow.ApplyShape`, `system_diagnostics`, `DelayedAction.Start`, `CompactLyric`?**
-  _High betweenness centrality (0.385) - this node is a cross-community bridge._
-- **What connects `DiscordActive`, `ShowsVoice`, `VencordPluginConnected` to the rest of the system?**
-  _608 weakly-connected nodes found - possible documentation gaps or missing edges._
-- **Should `MainWindow` be split into smaller, more focused modules?**
-  _Cohesion score 0.06901960784313725 - nodes in this community are weakly interconnected._
-- **Why does `Window` connect `Window` to `Art`, `Body`, `Eq`, `Glow`, `HeadsetGadget`, `PART_Track`, `PlayerLyricWait`, `PlayerMatrix`, `PlayerStars`, `SeekTrackShape`, `SeekWave`, `ShelfZone`, `MainWindow.BuildWeatherHours`, `Grid`, `WeatherHomeHit`, `Glass`, `Border`, `Digits`, `SoundCloudBrowser`, `Icon`, `Button`, `MainWindow`, `SoundCloudHeartReveal`, `AreaPicker`, `Path`, `MainWindow.BuildAddPage`, `StackPanel`, `VoiceDeafenIcon`, `MessageAvatar`, `Toggle`, `UniformGrid`, `ScaleTransform`, `GradientStop`, `Canvas`, `Ellipse`, `Ring`, `TextBox`, `RotateTransform`, `ScrollViewer`, `Segments`, `ToggleButton`, `GapSlider`, `LookRows`, `LyricA`, `NextIcon`, `SeekLines`?**
-  _High betweenness centrality (0.178) - this node is a cross-community bridge._
+- **Why does `Window` connect `Window` to `Art`, `Body`, `Eq`, `Glow`, `HeadsetGadget`, `PART_Track`, `PlayerLyricWait`, `PlayerMatrix`, `PlayerStars`, `SeekTrackShape`, `SeekWave`, `ShelfZone`, `MainWindow.BuildWeatherHours`, `Grid`, `WeatherHomeHit`, `Glass`, `Border`, `DrawingContext`, `Digits`, `SoundCloudBrowser`, `Icon`, `Button`, `SoundCloudHeartReveal`, `AreaPicker`, `Path`, `StackPanel`, `VoiceDeafenIcon`, `MessageAvatar`, `Toggle`, `UniformGrid`, `ScaleTransform`, `GradientStop`, `Canvas`, `Ellipse`, `Ring`, `TextBox`, `MainWindow`, `RotateTransform`, `ScrollViewer`, `Segments`, `ToggleButton`, `GapSlider`, `LookRows`, `LyricA`, `NextIcon`, `SeekLines`?**
+  _High betweenness centrality (0.184) - this node is a cross-community bridge._
+- **What connects `MainWindow`, `Content`, `Track` to the rest of the system?**
+  _609 weakly-connected nodes found - possible documentation gaps or missing edges._
+- **Should `TrackSnapshot` be split into smaller, more focused modules?**
+  _Cohesion score 0.14487179487179488 - nodes in this community are weakly interconnected._
+- **Why does `MainWindow` connect `MainWindow` to `Native`, `MainWindow.UpdateTargets`, `Window`, `LyricsNormalizer`, `MainWindow`, `Panel`, `Goo`, `system_windows`, `MediaService`, `RoutedEventArgs`, `Lyric`, `Border`, `FrameworkElement`, `MainWindow.ShowTransient`, `DynamicIsland`, `View`, `TimeSpan`, `Spring.Snap`?**
+  _High betweenness centrality (0.163) - this node is a cross-community bridge._
 - **Should `Native` be split into smaller, more focused modules?**
-  _Cohesion score 0.043571237636995455 - nodes in this community are weakly interconnected._
-- **Why does `DynamicIsland` connect `DynamicIsland` to `system_windows`, `Settings`, `LyricFxPlan.Sample`, `Brush`, `LyricsSources.Create`, `Motion.Ms`, `system_windows_threading`, `smtc-players.md`, `Spring`, `Gadget`, `WeatherActionBorder.cs`, `LyricsPresentation`, `Equalizer`, `IAudioClient`, `system_runtime_interopservices`, `LyricsNormalizer`, `CoreAudio.cs`, `LyricsMatcher`, `system_globalization`, `SpacePlaybackHook`, `TimeSpan`, `LyricsResult`, `system_diagnostics`?**
-  _High betweenness centrality (0.134) - this node is a cross-community bridge._
-- **Should `IntPtr` be split into smaller, more focused modules?**
-  _Cohesion score 0.11904761904761904 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.05306217858812529 - nodes in this community are weakly interconnected._
+- **Why does `MainWindow` connect `MainWindow` to `Native`, `MainWindow.BuildWeatherHours`, `system_windows`, `SourceApp`, `Glass`, `MainWindow.StartShapeLoop`, `MainWindow.UpdateMiniIsland`, `Border`, `FrameworkElement`, `MainWindow.SearchWeatherAsync`, `DrawingContext`, `Shelf`, `SoundCloudBrowser`, `Point`, `MainWindow.Notify`, `MainWindow.UpdateTargets`, `Motion.Ms`, `LyricsOffsetStore`, `Grab`, `RoutedEventArgs`, `PlayerLine`, `Gadget`, `PointerLyric`, `LyricsResult`, `LyricsCandidate`, `MainWindow.BuildAddPage`, `Spring.Snap`, `PreserveSig`, `LyricsNormalizer`, `HoverPreview`, `Uri`, `Uri`, `MainWindow.RefreshWeatherCities`, `ChipCorners`, `MainWindow.PublishWeather`, `MainWindow.ShowTransient`, `TimeSpan`, `MainWindow.UpdatePlayerLyrics`, `MainWindow`, `MainWindow`, `CompactLyric`?**
+  _High betweenness centrality (0.150) - this node is a cross-community bridge._
+- **Should `Window` be split into smaller, more focused modules?**
+  _Cohesion score 0.05052631578947368 - nodes in this community are weakly interconnected._
