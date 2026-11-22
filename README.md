@@ -45,3 +45,10 @@
 - накладные — [«Airpods max sky blue»](https://sketchfab.com/3d-models/airpods-max-sky-blue-3d0643db08fc4ef89bda55a74077ece4), автор [polyman](https://sketchfab.com/ely.haddad); перекрашены в серебро;
 - колонка — [«JBL Charge 3 speaker»](https://sketchfab.com/3d-models/jbl-charge-3-speaker-661f85fe3e4048f59785b2a75ffa52f8), автор [Aleksei Rozumnyi](https://sketchfab.com/Aleksei.Rozumnyi).
 
+
+## Интеграция с Discord
+
+Для голосового канала доступно прямое подключение. Для личных сообщений и упоминаний используйте один из плагинов из Assets релиза.
+
+- **Vencord:** распакуйте `DynamicIslandVencord.zip` в `src/userplugins` исходников Vencord и пересоберите клиент. [Установка и проверка](src/Discord/Vencord/dynamicIslandBridge.desktop/README.md).
+- **BetterDiscord:** положите `DynamicIslandDiscordBridge.plugin.js` в папку плагинов BetterDiscord и включите его в клиенте.

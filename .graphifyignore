@@ -1,0 +1,4 @@
+# Index lyrics source directories even though .gitignore has a lyrics cache rule.
+!/src/Lyrics/
+!/src/Api/Lyrics/
+/.codex/

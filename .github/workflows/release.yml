@@ -1,0 +1,57 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    env:
+      TAG: ${{ github.ref_name }}
+      UPDATE_REPOSITORY: ${{ github.repository }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Restore Windows runtime for publishing
+        shell: pwsh
+        run: dotnet restore DynamicIsland.csproj --runtime win-x64 --nologo
+
+      - name: Publish
+        shell: pwsh
+        run: >
+          dotnet publish DynamicIsland.csproj -c Release -r win-x64 --self-contained true --no-restore
+          -p:PublishSingleFile=true -p:UpdateRepository=$env:UPDATE_REPOSITORY
+          -p:IncludeNativeLibrariesForSelfExtract=true
+          -p:EnableCompressionInSingleFile=false
+          -p:DebugType=none
+          -p:Version=$($env:TAG.TrimStart('v'))
+          -o out
+
+      - name: Package Discord plugins
+        shell: pwsh
+        run: |
+          Copy-Item src/Discord/DynamicIslandDiscordBridge.plugin.js out/
+          Compress-Archive -Path src/Discord/Vencord/dynamicIslandBridge.desktop -DestinationPath out/DynamicIslandVencord.zip
+
+      - name: Create release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git fetch origin "+refs/tags/${env:TAG}:refs/tags/${env:TAG}"
+          $notes = @()
+          if ((git cat-file -t $env:TAG) -eq 'tag') { $notes = @(git tag -l --format='%(contents)' $env:TAG) }
+          if ("$notes".Trim()) {
+            $notes | Set-Content notes.md -Encoding utf8
+            gh release create $env:TAG out/DynamicIsland.exe out/DynamicIslandDiscordBridge.plugin.js out/DynamicIslandVencord.zip --title "Dynamic Island $env:TAG" --notes-file notes.md
+          } else {
+            gh release create $env:TAG out/DynamicIsland.exe out/DynamicIslandDiscordBridge.plugin.js out/DynamicIslandVencord.zip --title "Dynamic Island $env:TAG" --generate-notes
+          }
