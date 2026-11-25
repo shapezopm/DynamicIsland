@@ -110,7 +110,9 @@ public partial class MainWindow
         switch (grab)
         {
             case Grab.Lean:
-                SkipByLean(leant, pace.X);
+                if (CallMediaPrimary && _view == View.Media)
+                    StepDiscordMusic(DragDirection(leant, pace.X, LeanToSkip));
+                else SkipByLean(leant, pace.X);
                 break;
             case Grab.Pull when DragDirection(pulled, pace.Y, PullToOpen) <= 0:
                 break;
@@ -151,7 +153,8 @@ public partial class MainWindow
             return;
         }
         if (_ringing || _panel != Panel.None) SelectPanel(Panel.None);
-        else SelectPanel(ShowsVoice ? Panel.Voice : IsMediaActive ? Panel.Player : _obs.Recording ? Panel.Record : _countdown.IsActive ? Panel.Timer : Panel.Player);
+        else SelectPanel(CallMediaPrimary || !ShowsVoice && IsMediaActive ? Panel.Player
+            : ShowsVoice ? Panel.Voice : _obs.Recording ? Panel.Record : _countdown.IsActive ? Panel.Timer : Panel.Player);
         UpdateView();
     }
 
@@ -264,7 +267,7 @@ public partial class MainWindow
         else if (_view == View.Look && GapRow.IsMouseOver) SetGap(Settings.Gap + step * GapStep);
         else if (_view == View.Look && LookOverflow > 0) ScrollLook(-step);
         else if (_view == View.Shelf && ShelfOverflow > 0) ScrollShelf(-step);
-        else if (_view == View.Update && UpdateNotesOverflow > 0) ScrollUpdateNotes(-step);
+        else if (_view == View.Update) { if (UpdateNotesOverflow > 0) ScrollUpdateNotes(-step); }
         else if (_view != View.DiscordPlugin) AdjustWheelVolume(Native.PhysicalTouchpadWheelDelta(e.Delta));
     }
 

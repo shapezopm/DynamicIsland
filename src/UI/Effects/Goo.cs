@@ -23,7 +23,7 @@ public sealed class Goo : FrameworkElement
     readonly Light _flash = new();
     readonly Pen _edge;
 
-    Rect _pill = Rect.Empty, _bubble = Rect.Empty;
+    Rect _pill = Rect.Empty, _bubble = Rect.Empty, _oppositeBubble = Rect.Empty;
     double _radius;
 
     public Goo() => _edge = new Pen(_rim, 2 * RimWidth) { LineJoin = PenLineJoin.Round };
@@ -37,6 +37,7 @@ public sealed class Goo : FrameworkElement
     public (Rect Box, double Radius) PillInside => Inside(_pill, _radius);
 
     public (Rect Box, double Radius) BubbleInside => Inside(_bubble, _bubble.Height / 2);
+    public (Rect Box, double Radius) OppositeBubbleInside => Inside(_oppositeBubble, _oppositeBubble.Height / 2);
 
     public void Thin(bool glass, Duration time, Action thinned)
     {
@@ -66,36 +67,38 @@ public sealed class Goo : FrameworkElement
         _flash.Mist.BeginAnimation(Brush.OpacityProperty, null);
     }
 
-    public void SetShape(Rect pill, double radius, Rect bubble)
+    public void SetShape(Rect pill, double radius, Rect bubble, Rect oppositeBubble)
     {
-        if (pill == _pill && radius == _radius && bubble == _bubble) return;
+        if (pill == _pill && radius == _radius && bubble == _bubble && oppositeBubble == _oppositeBubble) return;
         _pill = pill;
         _radius = radius;
         _bubble = bubble;
+        _oppositeBubble = oppositeBubble;
         InvalidateVisual();
     }
 
     protected override void OnRender(DrawingContext dc)
     {
         if (_pill.IsEmpty) return;
-        Geometry pill = Outline(_pill, _radius);
-        if (_bubble.IsEmpty)
-        {
-            DrawBody(dc, pill);
-            return;
-        }
+        Geometry body = Outline(_pill, _radius);
+        body = AddBubble(dc, body, _bubble);
+        body = AddBubble(dc, body, _oppositeBubble);
+        DrawBody(dc, body);
+    }
 
-        Geometry bubble = Outline(_bubble, _bubble.Height / 2);
-        Geometry? neck = CreateNeck();
-        if (neck == null && !_pill.IntersectsWith(_bubble))
+    Geometry AddBubble(DrawingContext dc, Geometry body, Rect box)
+    {
+        if (box.IsEmpty) return body;
+        Geometry bubble = Outline(box, box.Height / 2);
+        Geometry? neck = CreateNeck(box);
+        if (neck == null && !_pill.IntersectsWith(box))
         {
-            DrawBody(dc, pill);
             DrawBody(dc, bubble);
-            return;
+            return body;
         }
 
-        Geometry body = Union(pill, bubble);
-        DrawBody(dc, neck != null ? Union(body, neck) : body);
+        body = Union(body, bubble);
+        return neck != null ? Union(body, neck) : body;
     }
 
     public static Geometry Union(Geometry a, Geometry b) =>
@@ -143,11 +146,14 @@ public sealed class Goo : FrameworkElement
         return (rect, Math.Max(radius - RimWidth, 0));
     }
 
-    Geometry? CreateNeck()
+    Geometry? CreateNeck(Rect bubble)
     {
-        var c1 = new Point(_pill.Right - _radius, _pill.Top + _radius);
-        var c2 = new Point(_bubble.Left + _bubble.Height / 2, _bubble.Top + _bubble.Height / 2);
-        return c2.X > c1.X ? Neck(c1, _radius - RimWidth, c2, _bubble.Height / 2 - RimWidth, TearGap) : null;
+        bool leading = bubble.Left + bubble.Width / 2 < _pill.Left + _pill.Width / 2;
+        double radius = bubble.Height / 2;
+        var c1 = new Point(leading ? _pill.Left + _radius : _pill.Right - _radius, _pill.Top + _radius);
+        var c2 = new Point(leading ? bubble.Right - radius : bubble.Left + radius, bubble.Top + radius);
+        return (leading ? c2.X < c1.X : c2.X > c1.X)
+            ? Neck(c1, _radius - RimWidth, c2, radius - RimWidth, TearGap) : null;
     }
 
     public static Geometry? Neck(Point c1, double r1, Point c2, double r2, double tearGap)

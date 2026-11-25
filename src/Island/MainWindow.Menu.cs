@@ -9,7 +9,7 @@ namespace DynamicIsland;
 
 public partial class MainWindow
 {
-    const double UpdatePagePadding = 14, UpdateNotesWheelStep = 54;
+    const double UpdatePagePadding = 14, UpdateNotesMaxHeight = 324, UpdateNotesCaptionHeight = 22;
     const int MegabyteShift = 20;
     const double LookHeight = 430, LookTilesHeight = 72, LookWheelStep = 80;
     const double LookEdgeZone = 70, LookEdgeScale = 0.8;
@@ -28,7 +28,11 @@ public partial class MainWindow
 
     void SettingsRow_Click(object sender, RoutedEventArgs e) => ShowPanelAndCheckUpdate(Panel.Settings);
 
-    void UpdateRow_Click(object sender, RoutedEventArgs e) => ShowPanelAndCheckUpdate(Panel.Update);
+    void UpdateRow_Click(object sender, RoutedEventArgs e)
+    {
+        RefreshUpdatePage();
+        ShowPanelAndCheckUpdate(Panel.Update);
+    }
 
     void UpdateBack_Click(object sender, RoutedEventArgs e) => ShowPanel(Panel.Settings);
 
@@ -186,18 +190,20 @@ public partial class MainWindow
         UpdateVersion.Text = version.ToString();
         UpdateFrom.Text = stage switch
         {
-            Updater.Stage.Unconfigured => "Канал обновлений не настроен",
             Updater.Stage.Checking => "проверяю…",
-            Updater.Stage.Latest => "последняя версия",
+            Updater.Stage.Unconfigured or Updater.Stage.Latest => "У вас последняя версия",
             Updater.Stage.Failed => "не получилось",
             _ => found ? "вместо " + Updater.CurrentVersion : "",
         };
-        UpdateNotes.SetVisible(found && _updater.Notes.Length > 0);
-        string notes = string.Join('\n', _updater.Notes.Select(note => "·  " + note));
+        string[] releaseNotes = _updater.LatestVersion == version ? _updater.Notes : [];
+        if (releaseNotes.Length == 0 && version == Updater.CurrentVersion) releaseNotes = Updater.BundledNotes;
+        UpdateNotes.SetVisible(releaseNotes.Length > 0);
+        string notes = string.Join('\n', releaseNotes.Select(note => "·  " + note));
         if (UpdateNotesText.Text != notes) _updateNotesScroll.Snap(0);
         UpdateNotesText.Text = notes;
 
-        UpdateButton.SetVisible(!loading && stage != Updater.Stage.Unconfigured);
+        UpdateActions.SetVisible(stage != Updater.Stage.Unconfigured);
+        UpdateButton.SetVisible(!loading);
         UpdateButton.IsEnabled = stage != Updater.Stage.Checking;
         UpdateLoad.SetVisible(loading);
         UpdateButton.Content = stage switch
@@ -227,6 +233,14 @@ public partial class MainWindow
 
     void FitUpdatePage()
     {
+        double workHeight = SystemParameters.WorkArea.Height;
+        if (PresentationSource.FromVisual(this) is not null)
+        {
+            Rect workArea = Native.WorkAreaAt(PointToScreen(new Point(ActualWidth / 2, 0)));
+            if (!workArea.IsEmpty) workHeight = workArea.Height / VisualTreeHelper.GetDpi(this).DpiScaleY;
+        }
+        double halfScreen = workHeight / (2 * Settings.Scale / 100.0);
+        UpdateNotesBox.MaxHeight = Math.Clamp(halfScreen - UpdateNotesCaptionHeight, 0, UpdateNotesMaxHeight);
         UpdateBody.Measure(new Size(UpdatePage.Width, double.PositiveInfinity));
         double height = Math.Ceiling(UpdateBody.DesiredSize.Height) + UpdatePagePadding;
         if (height == UpdatePage.Height) return;
@@ -239,13 +253,13 @@ public partial class MainWindow
 
     void ScrollUpdateNotes(int notches)
     {
-        _updateNotesScroll.Target = Math.Clamp(_updateNotesScroll.Target + notches * UpdateNotesWheelStep, 0, UpdateNotesOverflow);
+        _updateNotesScroll.Target = Math.Clamp(_updateNotesScroll.Target + notches * LookWheelStep, 0, UpdateNotesOverflow);
         StartShapeLoop();
     }
 
     void ApplyUpdateNotesScroll()
     {
-        double scrolled = Math.Min(_updateNotesScroll.Value, UpdateNotesOverflow);
+        double scrolled = Math.Clamp(_updateNotesScroll.Value, 0, UpdateNotesOverflow);
         UpdateNotesMove.Y = -scrolled;
         UpdateNotesEdgeTop.Color = EdgeFade(scrolled);
         UpdateNotesEdgeBottom.Color = EdgeFade(UpdateNotesOverflow - scrolled);

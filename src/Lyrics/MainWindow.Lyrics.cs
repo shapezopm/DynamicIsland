@@ -1,9 +1,11 @@
+using System.Diagnostics;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Media.Effects;
+using System.Windows.Threading;
 using static DynamicIsland.Motion;
 
 namespace DynamicIsland;
@@ -24,6 +26,7 @@ public partial class MainWindow
     const double UnsungPartOpacity = 0.6;
     const double LineScrollStagger = 0.04;
     const int VisibleLineRange = 4, BlurredLineRange = 2;
+    static readonly TimeSpan LyricBuildBudget = TimeSpan.FromMilliseconds(3);
 
     sealed class PlayerLine(Lyric row, double middle)
     {
@@ -31,6 +34,14 @@ public partial class MainWindow
         public double Middle { get; } = middle;
         public Spring Y { get; } = new(0, 170, 22);
         public double DueAt { get; set; }
+    }
+
+    sealed class PlayerLyricsBuild(LyricsService.Line[] lines, int count)
+    {
+        public LyricsService.Line[] Lines { get; } = lines;
+        public PlayerLine[] Rows { get; } = new PlayerLine[count];
+        public int Next;
+        public double Top;
     }
 
     readonly BitmapCache _lyricCache = new();
@@ -47,6 +58,7 @@ public partial class MainWindow
     LyricTiming.FinalLine _playerFinal;
     bool _playerLyricsFrozen;
     PlayerLine[] _playerRows = [];
+    PlayerLyricsBuild? _playerLyricsBuild;
     double _playerScroll;
     bool _playerScrolling;
     readonly int[] _playerAnimatingRows = new int[(2 * VisibleLineRange + 1) * 2];
@@ -103,25 +115,27 @@ public partial class MainWindow
 
     void UpdateLyric(bool snap = false)
     {
+        if (HoldingCallTrack) return;
         if (_view == View.MediaBig) UpdatePlayerLyrics(snap);
-        UpdateDiscordMusicLyrics(snap);
         if (_view != View.Media) return;
 
         LyricsResult current = CurrentLyricsResult();
         double candidateDuration = current.Candidate?.Duration ?? 0;
-        LyricsService.Line[] lines = TrimmedOutro(current.Status == LyricsStatus.Synced ? current.Lines : [],
+        LyricsService.Line[] lines = TrimmedOutro(!CallMediaTitleOnly && !CallMediaMini && current.Status == LyricsStatus.Synced ? current.Lines : [],
             candidateDuration, out _, out _compactFinal);
         TimeSpan at = LyricTime;
         bool frozen = _compactFinal.IsComplete(at);
         int index = frozen ? -1 : _compactFinal.LineAt(lines, at);
         bool wasFrozen = _compactLyricsFrozen;
-        bool sameLine = _lyricBlock.IsEntered && ReferenceEquals(lines, _lyricLines) && index == _lyricIndex;
+        bool titleOnly = CallMediaTitleOnly;
+        bool sameLine = _lyricBlock.IsEntered && ReferenceEquals(lines, _lyricLines) && index == _lyricIndex
+            && titleOnly == _compactCaptionTitleOnly;
         if (frozen && wasFrozen && sameLine) return;
         _compactLyricsFrozen = frozen;
 
         string title = _media.HasTrack ? _media.Name : "";
         string artist = _media.Artist?.Trim() ?? "";
-        if (title.Length > 0 && artist.Length > 0) title = $"{artist} - {title}";
+        if (!CallMediaTitleOnly && title.Length > 0 && artist.Length > 0) title = $"{artist} - {title}";
         string text = index < 0 ? "" : lines[index].Text;
         TimeSpan? end = TimedLineEnd(lines, index, _compactFinal, candidateDuration);
         double seconds = end is { } until ? (until.Ticks - (double)at.Ticks) / TimeSpan.TicksPerSecond : 0;
@@ -138,6 +152,7 @@ public partial class MainWindow
         _lyricLines = lines;
         _lyricIndex = index;
         _lyricTitle = title;
+        _compactCaptionTitleOnly = titleOnly;
         if (frozen)
             (_lyricBlock == LyricA ? LyricB : LyricA).StopTransitions(visible: false);
         else
@@ -150,10 +165,13 @@ public partial class MainWindow
     internal static (string Text, bool Named) CompactCaption(string lyric, string title) =>
         string.IsNullOrWhiteSpace(lyric) ? (title, true) : (lyric, false);
 
+    bool _compactCaptionTitleOnly;
+
     void ShowLyric(string text, double seconds, bool snap, bool named, bool immediate)
     {
         CompactLyric old = _lyricBlock;
-        if (old.IsEntered && text == old.Text && (text.Length == 0 || (named && _lyricShowsTitle))) return;
+        if (old.IsEntered && text == old.Text && _compactCaptionTitleOnly == CallMediaTitleOnly
+            && (text.Length == 0 || (named && _lyricShowsTitle))) return;
         CompactLyric next = old == LyricA ? LyricB : LyricA;
 
         // Prepare the replacement before hiding the caption that is still visible.
@@ -167,9 +185,9 @@ public partial class MainWindow
         double compactWidth = text.Length == 0
             ? CompactMediaWidth
             : Math.Clamp(width + 2 * LyricFadeEdge + LyricInset, CompactMediaWidth, MaxCompactMediaWidth);
-        next.IslandWidth = compactWidth;
+        next.IslandWidth = CallMediaTitleOnly ? CallMediaTitleWidth : compactWidth;
         CentreLyrics();
-        double box = compactWidth - LyricInset;
+        double box = next.IslandWidth - LyricInset;
         double overflow = width - (box - 2 * LyricFadeEdge);
         DoubleAnimationUsingKeyFrames? scroll = named && overflow > 0 ? CreateLyricScroll(overflow, seconds) : null;
 
@@ -280,8 +298,6 @@ public partial class MainWindow
             _height.Tune(280, 30);
             UpdateTargets();
         }
-        ShowLyricsPlaceholder(false);
-
         TimeSpan at = LyricTime;
         if (lines.Length == 0 || _playerFinal.Index < 0 && at >= documentEnd)
         {
@@ -289,13 +305,14 @@ public partial class MainWindow
             return;
         }
 
-        if (documentChanged || _playerRows.Length == 0)
+        int count = _playerFinal.Index >= 0 ? Math.Min(lines.Length, _playerFinal.Index + 1) : lines.Length;
+        if (documentChanged || _playerRows.Length != count)
         {
-            _playerIndex = -1;
-            BuildPlayerLyrics(lines);
-            if (!snap) PlayerLyricLines.BeginAnimation(OpacityProperty, new DoubleAnimation(0, 1, Ms(300)));
-            snap = true;
+            if (_playerLyricsBuild is not { } pending || !ReferenceEquals(pending.Lines, lines) || pending.Rows.Length != count)
+                QueuePlayerLyricsBuild(lines, count);
+            return;
         }
+        ShowLyricsPlaceholder(false);
 
         bool frozen = _playerFinal.IsComplete(at);
         bool changedMode = frozen != _playerLyricsFrozen;
@@ -390,7 +407,6 @@ public partial class MainWindow
             }
         }
         LyricsPresentation presentation = _playerPresentation ?? LyricsPresentation.FromResult(LyricsResult.Empty, now);
-        ShowLyricsPlaceholder(false);
         return presentation;
     }
 
@@ -536,7 +552,6 @@ public partial class MainWindow
             moving |= LyricB.Part(overCompact && LyricB == _lyricBlock ? Mouse.GetPosition(LyricB) : null, dt,
                 _view == View.Media && _media.IsPlaying);
         }
-        moving |= AdvanceDiscordMusicLyrics(dt);
         return moving || lyricLive;
     }
 
@@ -570,26 +585,39 @@ public partial class MainWindow
 
     void ClearPlayerLyricsRows()
     {
+        _playerLyricsBuild = null;
+        ShowLyricsPlaceholder(false);
         _playerIndex = -1;
-        _playerLyricsFrozen = false;
-        if (_playerRows.Length == 0) return;
-        PlayerLyricLines.BeginAnimation(OpacityProperty, null);
-        BuildPlayerLyrics([]);
-    }
-
-    void BuildPlayerLyrics(LyricsService.Line[] lines)
-    {
-        PlayerLyricLines.Children.Clear();
-        int count = _playerFinal.Index >= 0 ? Math.Min(lines.Length, _playerFinal.Index + 1) : lines.Length;
-        _playerRows = new PlayerLine[count];
         _playerLyricsFrozen = false;
         _playerScrolling = false;
         _playerAnimatingCount = 0;
+        _playerRows = [];
+        if (PlayerLyricLines.Children.Count == 0) return;
+        PlayerLyricLines.BeginAnimation(OpacityProperty, null);
+        PlayerLyricLines.Children.Clear();
+    }
 
-        double width = PlayerTimedViewport.Width, top = 0, size = Settings.LyricEffects ? UnsungLineScale : 1;
-        for (int i = 0; i < count; i++)
+    void QueuePlayerLyricsBuild(LyricsService.Line[] lines, int count)
+    {
+        ClearPlayerLyricsRows();
+        var build = _playerLyricsBuild = new PlayerLyricsBuild(lines, count);
+        PlayerLyricLines.Opacity = 0;
+        ShowLyricsPlaceholder(true);
+        SchedulePlayerLyricsBuild(build);
+    }
+
+    void SchedulePlayerLyricsBuild(PlayerLyricsBuild build) =>
+        Dispatcher.BeginInvoke(DispatcherPriority.Background, () => BuildPlayerLyricsSlice(build));
+
+    void BuildPlayerLyricsSlice(PlayerLyricsBuild build)
+    {
+        if (!ReferenceEquals(_playerLyricsBuild, build)) return;
+        long started = Stopwatch.GetTimestamp();
+        double width = PlayerTimedViewport.Width, size = Settings.LyricEffects ? UnsungLineScale : 1;
+        do
         {
-            var row = new Lyric(lines[i].Text)
+            int i = build.Next++;
+            var row = new Lyric(build.Lines[i].Text)
             {
                 Width = width,
                 Opacity = UnsungLineOpacity,
@@ -599,10 +627,20 @@ public partial class MainWindow
             };
             PlayerLyricLines.Children.Add(row);
             row.Measure(new Size(width, double.PositiveInfinity));
-            Canvas.SetTop(row, top);
-            _playerRows[i] = new PlayerLine(row, top + row.DesiredSize.Height / 2);
-            top += row.DesiredSize.Height + PlayerLineGap;
+            Canvas.SetTop(row, build.Top);
+            build.Rows[i] = new PlayerLine(row, build.Top + row.DesiredSize.Height / 2);
+            build.Top += row.DesiredSize.Height + PlayerLineGap;
+        } while (build.Next < build.Rows.Length && Stopwatch.GetElapsedTime(started) < LyricBuildBudget);
+
+        if (build.Next < build.Rows.Length)
+        {
+            SchedulePlayerLyricsBuild(build);
+            return;
         }
+        _playerRows = build.Rows;
+        _playerLyricsBuild = null;
+        UpdatePlayerLyrics(true);
+        if (_playerLyricsBuild is null) PlayerLyricLines.Opacity = 1;
     }
 
     void HighlightLine(Lyric row, bool sung, Duration time)

@@ -36,6 +36,7 @@ public partial class MainWindow
     bool _morphing;
     bool _shapeDirty;
     bool _shadowDeferred;
+    bool _callBubbleOnLeft;
 
     void UpdateTargets()
     {
@@ -47,8 +48,9 @@ public partial class MainWindow
         _height.Target = shape.Height + pull;
         _radius.Target = shape.Radius + pull * PullRounding;
         _leanX.Target = lean;
-        if (MediaSpots.TryGetValue(_view, out MediaSpot spot))
+        if (TryGetMediaSpot(_view, out MediaSpot spot))
         {
+            _coverLeft.Target = spot.CoverLeft;
             _coverTop.Target = spot.CoverTop + pull / 2;
             _barsCenterY.Target = spot.BarsCenterY + pull / 2;
             AimCoverAtWholePixels(spot, shape.Width);
@@ -58,6 +60,7 @@ public partial class MainWindow
         _offsetY.Target = (HiddenByFullscreen || _sentAway) && !_ringing ? -(shape.Height + OffscreenMargin + Settings.Gap * 100.0 / Settings.Scale) : 0;
         _scale.Target = dragging ? 1 : _pressed ? (compact ? PressedScale : PressedOpenScale) : _hovered && compact ? HoverScale : 1;
         _bubbleScale.Target = _bubblePressed ? PressedScale : _bubbleHovered ? HoverScale : 1;
+        _callVoiceScale.Target = _callVoicePressed ? PressedScale : _callVoiceHovered ? HoverScale : 1;
         StartShapeLoop();
     }
 
@@ -67,9 +70,17 @@ public partial class MainWindow
         bool record = _obs.Recording && _view != View.Record;
         bool timer = _countdown.IsActive && _view != View.Timer, shelf = ShowShelfCount || ShowSeparateWeather;
         bool split = compact && (record || timer || shelf);
+        if (_callBubbleOnLeft != WantsCallBubbleOnLeft)
+        {
+            if (_bubbleSplit.Value > BubbleVisibleSplit)
+                split = false;
+            else
+                _callBubbleOnLeft = WantsCallBubbleOnLeft;
+        }
         _bubbleSplit.Target = split ? 1 : 0;
         if (compact) _bubbleSplit.Tune(140, 17);
         else _bubbleSplit.Tune(300, 30);
+        _callVoiceSplit.Tune(_bubbleSplit.Stiffness, _bubbleSplit.Damping);
         if (!split) return;
 
         _bubbleRecord.Target = record ? 1 : 0;
@@ -152,6 +163,12 @@ public partial class MainWindow
                 viewer.ScrollToVerticalOffset(Math.Clamp(spring.Value, 0, viewer.ScrollableHeight));
             }
         }
+        if (_callBubbleOnLeft != WantsCallBubbleOnLeft
+            && _bubbleSplit.Value <= BubbleVisibleSplit)
+        {
+            UpdateBubbleTargets(ShapeOf(_view).Height < CompactMaxHeight);
+            sceneMoving = true;
+        }
         bool moving = sceneMoving || weatherMoving || listMoving;
         bool redrawShape = _shapeDirty || sceneChanged || _morphing;
         _shapeDirty = false;
@@ -161,7 +178,8 @@ public partial class MainWindow
             ApplyWeatherScroll();
             ApplyWeatherPageTransition();
         }
-        if (!moving) EndMorph();
+        if (!moving)
+            EndMorph();
         return moving || IsLyricSettling;
     }
 
@@ -197,12 +215,14 @@ public partial class MainWindow
         IslandScale.ScaleX = IslandScale.ScaleY = scale;
         RootSize.ScaleX = RootSize.ScaleY = size;
         RootMove.Y = _offsetY.Value + _topGap.Value / size;
-        RootLean.X = Math.Round(_leanX.Value * size * dpi) / (size * dpi);
+        double pixels = Math.Max(size * dpi, MinScale);
+        RootLean.X = Math.Round(_leanX.Value * pixels) / pixels;
         SharpenLyricCache(dpi);
 
         PlaceCoverAndBars(pill);
-        PlaceBubble(pill, r, scale);
-        PlaceDiscordMusic(pill, scale);
+        Rect bubble = PlaceBubble(pill, r, scale);
+        Rect voice = PlaceDetachedDiscordVoice(pill, r, scale);
+        Body.SetShape(pill, r, bubble, voice);
         CutGlass(dpi);
     }
 
@@ -243,14 +263,7 @@ public partial class MainWindow
         if (!_glass.IsOn || Body.TransformToAncestor(this) is not Transform place) return;
         Matrix toPixels = place.Value;
         toPixels.Scale(dpi, dpi);
-        _glass.Cut(Body.PillInside, Body.BubbleInside, toPixels);
-        if (DiscordMusicPill.IsVisible && DiscordMusicPill.TransformToAncestor(this) is Transform music)
-        {
-            Matrix musicPixels = music.Value;
-            musicPixels.Scale(dpi, dpi);
-            _glass.CutMusic((new Rect(0, 0, DiscordMusicPill.Width, DiscordMusicPill.Height), 17), musicPixels);
-        }
-        else _glass.CutMusic((Rect.Empty, 0), toPixels);
+        _glass.Cut(Body.PillInside, Body.BubbleInside, Body.OppositeBubbleInside, toPixels);
     }
 
     void SyncGlass(bool animate)
@@ -260,7 +273,8 @@ public partial class MainWindow
             _glass.Show();
             Reshape();
         }
-        Body.Thin(Settings.Glass, animate ? GlassTime : TimeSpan.Zero, HideGlassOnceCovered);
+        TimeSpan transition = animate ? GlassTime : TimeSpan.Zero;
+        Body.Thin(Settings.Glass, transition, HideGlassOnceCovered);
     }
 
     void HideGlassOnceCovered()
@@ -293,9 +307,26 @@ public partial class MainWindow
         Shadow.Visibility = Visibility.Hidden;
     }
 
-    void PlaceBubble(Rect pill, double r, double scale)
+    double VisibleBubbleSplit(double split, double pillHeight) => ShowsVoice
+        ? split * Math.Clamp((CompactMaxHeight + 10 - pillHeight) / 10, 0, 1) : split;
+
+    static double BubbleContentOpacity(double split) => Math.Clamp(split * 4 - 3, 0, 1);
+
+    static Rect SideBubbleShape(Rect pill, double radius, double pillScale, double width, double height,
+        double sideScale, double split, bool left, out double offset)
     {
-        double split = _bubbleSplit.Value, bubble = Math.Max(_bubbleScale.Value, MinScale);
+        double tuck = Math.Max(radius - height / 2, 0) * BubbleTuckFactor * (1 - Math.Clamp(split, 0, 1)) * pillScale;
+        double position = pill.Width * pillScale / 2 + (BubbleGap + width) * split - width - tuck;
+        if (left) position = -position - width * sideScale;
+        offset = position + width / 2;
+        return new Rect(pill.Left + pill.Width / 2 + position / pillScale, 0,
+            width * sideScale / pillScale, height * sideScale / pillScale);
+    }
+
+    Rect PlaceBubble(Rect pill, double r, double scale)
+    {
+        double split = VisibleBubbleSplit(_bubbleSplit.Value, pill.Height);
+        double bubble = Math.Max(_bubbleScale.Value, MinScale);
         double record = Math.Max(_bubbleRecord.Value, 0), timer = Math.Max(_bubbleTimer.Value, 0), shelf = Math.Max(_bubbleShelf.Value, 0);
         double seams = record * timer + timer * shelf + record * shelf * (1 - Math.Clamp(timer, 0, 1));
         double wide = Math.Max(RecordBubbleWidth * record + TimerBubbleWidth * timer + _shelfBubbleWidth.Value * shelf - BubbleOverlap * seams, Bubble.Height);
@@ -307,16 +338,12 @@ public partial class MainWindow
         BubbleTimer.Margin = new Thickness((RecordBubbleWidth - BubbleOverlap) * record, 0, 0, 0);
         BubbleShelf.Opacity = Math.Clamp(shelf * 2 - 1, 0, 1);
         BubbleShelf.Margin = new Thickness(0, 0, ShelfBubblePadding + (ShelfBubblePaddingWithTimer - ShelfBubblePadding) * Math.Clamp(Math.Max(timer, record), 0, 1), 0);
-        double tuck = Math.Max(r - Bubble.Height / 2, 0) * BubbleTuckFactor * (1 - Math.Clamp(split, 0, 1)) * scale;
-        BubbleMove.X = (pill.Width * scale - wide) / 2 + (BubbleGap + wide) * split - tuck;
         BubbleScale.ScaleX = BubbleScale.ScaleY = bubble;
-        BubbleBody.Opacity = Math.Clamp(split * 4 - 3, 0, 1);
-        Bubble.IsHitTestVisible = split > BubbleClickableSplit;
-
-        double past = ((BubbleGap + wide) * split - wide - tuck) / scale;
-        Body.SetShape(pill, r, apart
-            ? new Rect(pill.Right + past, 0, wide * bubble / scale, Bubble.Height * bubble / scale)
-            : Rect.Empty);
+        BubbleBody.Opacity = BubbleContentOpacity(split);
+        Bubble.IsHitTestVisible = split > BubbleClickableSplit && (!ShowsVoice || _bubbleSplit.Target > 0);
+        Rect shape = SideBubbleShape(pill, r, scale, wide, Bubble.Height, bubble, split, _callBubbleOnLeft, out double offset);
+        BubbleMove.X = offset;
+        return apart ? shape : Rect.Empty;
     }
 
     void FitViews(double w, double h)

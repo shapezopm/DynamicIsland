@@ -14,14 +14,14 @@ public partial class MainWindow
     bool _soundCloudHasTrack, _soundCloudPlaying, _soundCloudBusy, _soundCloudLiked;
     SoundCloudBrowser? _soundCloudBrowser;
 
-    async void RefreshSoundCloudHeart(bool force = false)
+    async void RefreshSoundCloudHeart()
     {
         TrackSnapshot track = _media.Snapshot;
         bool hasTrack = _media.HasTrack;
         bool playing = hasTrack && _media.IsPlaying;
         bool resumed = playing && !_soundCloudPlaying;
         _soundCloudPlaying = playing;
-        if (!force && hasTrack == _soundCloudHasTrack && track.SameIdentity(_soundCloudSnapshot)
+        if (hasTrack == _soundCloudHasTrack && track.SameIdentity(_soundCloudSnapshot)
             && (!resumed || _soundCloudTrack is not null)) return;
         int lookupVersion = ++_soundCloudLookupVersion;
         _soundCloudSnapshot = track;

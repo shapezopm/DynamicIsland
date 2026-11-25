@@ -1,5 +1,6 @@
 using System.IO;
 using System.Net.Http;
+using System.Security.Cryptography;
 using System.Windows.Media;
 using System.Windows.Threading;
 using Windows.Foundation;
@@ -43,6 +44,7 @@ sealed class MediaService
     // A missing or undecodable thumbnail is retried by the metadata poll; after a few misses the web catalogue is asked once.
     const int CoverFallbackAfter = 3;
     string _coverKey = "", _coverFallbackKey = "", _coverFailure = "";
+    byte[]? _thumbnailHash;
     int _coverAttempts;
     TimeSpan _duration;
     TrackDuration _sourceDuration;
@@ -143,7 +145,7 @@ sealed class MediaService
         _manager = await Manager.RequestAsync();
         _manager.CurrentSessionChanged += (_, _) => _ui.InvokeAsync(() =>
         {
-            UnpinIfAnotherPlays();
+            ObserveSessions();
             AttachSession();
         });
         _manager.SessionsChanged += (_, _) => _ui.InvokeAsync(() => { ObserveSessions(); AttachSession(); });
@@ -229,17 +231,6 @@ sealed class MediaService
         catch (Exception failure) { App.Log(failure); }
     }
 
-    void UnpinIfAnotherPlays()
-    {
-        try
-        {
-            Session? current = _manager?.GetCurrentSession();
-            ObserveSessions();
-            if (_pinned is null && current != null && IsPlayingSession(current)) _latestPlaying = current;
-        }
-        catch (Exception failure) { App.Log(failure); }
-    }
-
     // WinRT wrappers implement equality by native identity, not managed wrapper reference.
     static bool SameSession(Session? a, Session? b) => Equals(a, b);
 
@@ -264,6 +255,7 @@ sealed class MediaService
     {
         Session? next = PickSession();
         if (SameSession(next, _session)) return;
+        bool keepTrack = SameApp(next, _session) && HasTrack;
         if (_session != null)
         {
             try
@@ -276,7 +268,14 @@ sealed class MediaService
         }
 
         _session = next;
-        ResetSessionState();
+        if (keepTrack)
+        {
+            // A renewed SMTC session invalidates its pending reads without replacing the visible track.
+            _sessionGeneration++;
+            _refreshVersion++;
+            _seekVersion++;
+        }
+        else ResetSessionState();
 
         if (_session != null)
         {
@@ -284,7 +283,7 @@ sealed class MediaService
             _session.PlaybackInfoChanged += OnPlayback;
             _session.TimelinePropertiesChanged += OnTimeline;
         }
-        Changed?.Invoke();
+        if (!keepTrack) Changed?.Invoke();
         _ = RefreshAsync();
     }
 
@@ -294,6 +293,7 @@ sealed class MediaService
         _trackGeneration++;
         _refreshVersion++;
         _title = _artist = _album = "";
+        _thumbnailHash = null;
         _noTimeline = _barSearched = false;
         ResetTrackTiming();
         _clock.SetPlayback(false, 1);
@@ -335,8 +335,6 @@ sealed class MediaService
     {
         try
         {
-            // Точно как в старой версии (PickSession из DynamicIsland-main\MediaService.cs):
-            // закреплённая по AppUserModelId → текущая, если играет → первая играющая → текущая.
             var sessions = _manager!.GetSessions();
             if (_pinned != null)
             {
@@ -349,9 +347,10 @@ sealed class MediaService
             }
 
             Session? current = _manager.GetCurrentSession();
-            Session? picked = current != null && IsPlayingSession(current)
-                ? current
-                : sessions.FirstOrDefault(IsPlayingSession) ?? current;
+            Session? previous = sessions.FirstOrDefault(session => SameSession(session, _session))
+                ?? sessions.FirstOrDefault(session => SameApp(session, _session));
+            Session? picked = MediaSessionSelection.Pick(sessions, current, null, previous,
+                _latestPlaying, IsPlayingSession, SessionActivity);
             LogPick(sessions, picked);
             return picked;
         }
@@ -483,16 +482,17 @@ sealed class MediaService
             string title = properties.Title ?? "";
             string artist = properties.Artist ?? "", album = properties.AlbumTitle ?? "";
             LogMeta(title, artist, album);
-            bool sameTrack = title == _title;
+            bool sameTrack = (title, artist, album) == (_title, _artist, _album);
             string coverKey = title + "\n" + artist + "\n" + album;
-            if (coverKey != _coverKey) (_coverKey, _coverAttempts, _coverFailure) = (coverKey, 0, "");
+            if (coverKey != _coverKey)
+                (_coverKey, _coverAttempts, _coverFailure, _thumbnailHash) = (coverKey, 0, "", null);
             // Обложку перезагружаем только при смене трека, если её нет или если вызов сам её запросил.
             // Фоновый опрос метаданных (refreshCover: false) не должен пересоздавать картинку: это даёт анимацию «уезжает и возвращается».
-            (ImageSource? art, Color[] palette) = (null, CoverPalette.Plain);
+            (ImageSource? art, Color[] palette, byte[]? hash) = (null, CoverPalette.Plain, null);
             bool coverWanted = refreshCover || !sameTrack || Art is null;
             if (properties.Thumbnail != null && coverWanted)
             {
-                (art, palette) = await LoadCoverAsync(properties.Thumbnail, coverKey);
+                (art, palette, hash) = await LoadCoverAsync(properties.Thumbnail, coverKey);
                 if (version != _refreshVersion) return;
             }
             if (art is null && coverWanted) _coverAttempts++;
@@ -504,6 +504,7 @@ sealed class MediaService
             {
                 Art = art;
                 Palette = palette;
+                _thumbnailHash = hash;
             }
             if (Art is null && _coverAttempts >= CoverFallbackAfter && Settings.Lyrics && title.Length > 0)
                 _ = LoadFallbackCoverAsync(title, artist, coverKey);
@@ -518,7 +519,7 @@ sealed class MediaService
         Changed?.Invoke();
     }
 
-    async Task<(ImageSource? Art, Color[] Palette)> LoadCoverAsync(IRandomAccessStreamReference thumbnail, string key)
+    async Task<(ImageSource? Art, Color[] Palette, byte[]? Hash)> LoadCoverAsync(IRandomAccessStreamReference thumbnail, string key)
     {
         try
         {
@@ -529,15 +530,20 @@ sealed class MediaService
             if (buffer.Length == 0)
             {
                 LogCoverFailure(key, new InvalidDataException("The media session returned an empty thumbnail stream."));
-                return (null, CoverPalette.Plain);
+                return (null, CoverPalette.Plain, null);
             }
             buffer.Position = 0;
-            return await Task.Run(() => CoverPalette.Decode(buffer));
+            byte[] hash = SHA256.HashData(buffer);
+            if (key == _coverKey && Art is { } current && _thumbnailHash is { } previous && hash.AsSpan().SequenceEqual(previous))
+                return (current, Palette, previous);
+            buffer.Position = 0;
+            var (art, palette) = await Task.Run(() => CoverPalette.Decode(buffer));
+            return (art, palette, hash);
         }
         catch (Exception ex)
         {
             LogCoverFailure(key, ex);
-            return (null, CoverPalette.Plain);
+            return (null, CoverPalette.Plain, null);
         }
     }
 

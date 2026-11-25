@@ -54,7 +54,8 @@ public partial class MainWindow
             InfoWeather.Text = DescribeDegrees(now.Degrees);
             InfoWeatherIcon.Kind = MenuWeatherIcon.Kind = GlyphOf(now.Sky, now.Night);
         }
-        PublishWeather(); UpdateMiniIsland(DateTime.Now, now);
+        PublishWeather();
+        UpdateMiniIsland(DateTime.Now, MiniWeatherReport());
     }
 
     // The page is part of the island's own tree (see WeatherView in MainWindow.xaml); the body behind it is the

@@ -20,6 +20,14 @@ jobs:
         with:
           dotnet-version: 8.0.x
 
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 11.25.0
+
       - name: Restore Windows runtime for publishing
         shell: pwsh
         run: dotnet restore DynamicIsland.csproj --runtime win-x64 --nologo
@@ -37,21 +45,25 @@ jobs:
 
       - name: Package Discord plugins
         shell: pwsh
-        run: |
-          Copy-Item src/Discord/DynamicIslandDiscordBridge.plugin.js out/
-          Compress-Archive -Path src/Discord/Vencord/dynamicIslandBridge.desktop -DestinationPath out/DynamicIslandVencord.zip
+        run: ./scripts/Package-DiscordPlugins.ps1 -OutputDirectory out
 
       - name: Create release
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          $releaseArgs = @($env:TAG, 'out/DynamicIsland.exe', 'out/Plugins.zip', '--verify-tag', '--title', "Dynamic Island $env:TAG")
+          $notesFile = "docs/releases/$env:TAG.md"
+          if (Test-Path -LiteralPath $notesFile) {
+            gh release create @releaseArgs --notes-file $notesFile
+            exit $LASTEXITCODE
+          }
           git fetch origin "+refs/tags/${env:TAG}:refs/tags/${env:TAG}"
           $notes = @()
           if ((git cat-file -t $env:TAG) -eq 'tag') { $notes = @(git tag -l --format='%(contents)' $env:TAG) }
           if ("$notes".Trim()) {
             $notes | Set-Content notes.md -Encoding utf8
-            gh release create $env:TAG out/DynamicIsland.exe out/DynamicIslandDiscordBridge.plugin.js out/DynamicIslandVencord.zip --title "Dynamic Island $env:TAG" --notes-file notes.md
+            gh release create @releaseArgs --notes-file notes.md
           } else {
-            gh release create $env:TAG out/DynamicIsland.exe out/DynamicIslandDiscordBridge.plugin.js out/DynamicIslandVencord.zip --title "Dynamic Island $env:TAG" --generate-notes
+            gh release create @releaseArgs --generate-notes
           }

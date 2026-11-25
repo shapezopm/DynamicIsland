@@ -105,6 +105,7 @@
         </Style>
 
         <Style x:Key="BackButton" TargetType="Button" BasedOn="{StaticResource RowButton}">
+            <Setter Property="local:RowList.IsBackAction" Value="True"/>
             <Setter Property="Height" Value="32"/>
             <Setter Property="Margin" Value="0,0,0,2"/>
             <Setter Property="Template">
@@ -662,7 +663,9 @@
               MouseEnter="Island_MouseEnter" MouseLeave="Island_MouseLeave"
               LostMouseCapture="Island_LostMouseCapture">
             <Grid.RenderTransform>
-                <ScaleTransform x:Name="IslandScale"/>
+                <TransformGroup>
+                    <ScaleTransform x:Name="IslandScale"/>
+                </TransformGroup>
             </Grid.RenderTransform>
 
             <Path x:Name="Shadow" Fill="Black" Opacity="0" IsHitTestVisible="False"
@@ -1270,21 +1273,29 @@
                 </Grid>
 
                 <Grid x:Name="VoiceBigView" Width="360" Height="170" HorizontalAlignment="Center" VerticalAlignment="Top">
-                    <StackPanel Margin="22,17,22,0" VerticalAlignment="Top">
-                        <StackPanel Orientation="Horizontal">
-                            <local:Icon Kind="Loud" Width="16" Height="16" Fill="{StaticResource Green}" VerticalAlignment="Center"/>
-                            <TextBlock x:Name="VoiceChannelName" FontSize="15" FontWeight="SemiBold" Margin="8,0,0,0" MaxWidth="290"
-                                       TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
+                    <Grid Margin="22,14,18,0" Height="40" VerticalAlignment="Top">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="30"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="34"/>
+                        </Grid.ColumnDefinitions>
+                        <Path Width="16" Height="16" Stretch="Uniform" Fill="{StaticResource Green}"
+                              HorizontalAlignment="Left" VerticalAlignment="Center" ToolTip="Голосовой звонок"
+                              Data="M2.2,1.4 L4.8,1 Q5.4,1 5.6,1.7 L6.5,5.1 Q6.6,5.6 6.2,6 L4.6,7.3 Q6.4,10.8 9.9,12.5 L11.2,10.9 Q11.6,10.5 12.1,10.6 L15.5,11.5 Q16.2,11.7 16.2,12.3 L15.8,14.9 Q15.6,16 14.6,16 C7.1,16 1,9.9 1,2.6 Q1,1.6 2.2,1.4 Z"/>
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="0,0,8,0">
+                            <TextBlock x:Name="VoiceChannelName" FontSize="15" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
+                            <TextBlock x:Name="VoiceGuildName" FontSize="12" Foreground="{StaticResource Dim}"
+                                       Margin="0,2,0,0" TextTrimming="CharacterEllipsis"/>
                         </StackPanel>
-                        <StackPanel Orientation="Horizontal" Margin="24,1,0,0">
-                            <TextBlock x:Name="VoiceGuildName" FontSize="12" Foreground="{StaticResource Dim}" MaxWidth="200"
-                                       TextTrimming="CharacterEllipsis" VerticalAlignment="Center"/>
-                            <TextBlock x:Name="VoiceDot" Text="·" FontSize="12" Foreground="{StaticResource Dim}" Margin="6,0,6,0"
-                                       VerticalAlignment="Center"/>
-                            <local:Digits x:Name="VoiceTime" Text="0:00" FontSize="12" Foreground="{StaticResource Dim}"
-                                          VerticalAlignment="Center"/>
-                        </StackPanel>
-                    </StackPanel>
+                        <local:Digits x:Name="VoiceTime" Grid.Column="2" Text="0:00" FontSize="12"
+                                      Foreground="{StaticResource Dim}" Margin="6,0,10,0" VerticalAlignment="Center"/>
+                        <Button Grid.Column="3" Style="{StaticResource ChipButton}" Width="32" Height="32" Padding="0" Margin="0"
+                                VerticalAlignment="Center" Click="VoiceSettings_Click" ToolTip="Настройки Discord"
+                                AutomationProperties.Name="Настройки Discord">
+                            <local:Icon Kind="Gear" Width="16" Height="16" Fill="{StaticResource Dim}"/>
+                        </Button>
+                    </Grid>
                     <StackPanel x:Name="VoiceMembers" Margin="14,66,14,0" VerticalAlignment="Top"/>
                     <local:Puddle HorizontalAlignment="Center" VerticalAlignment="Bottom" Margin="0,0,0,10">
                         <StackPanel Orientation="Horizontal">
@@ -1380,75 +1391,64 @@
                     </local:RowList>
                 </Grid>
 
-                <Grid x:Name="DiscordPluginPage" Width="342" Height="328" HorizontalAlignment="Center" VerticalAlignment="Top">
-                    <StackPanel Margin="10,8,10,0">
-                        <local:RowList>
-                            <Button Style="{StaticResource BackButton}" Content="ПЛАГИНЫ DISCORD" Click="DiscordPluginBack_Click"/>
-                        </local:RowList>
-                        <TextBlock Margin="12,8,12,0" TextWrapping="Wrap" Foreground="{StaticResource Dim}"
-                                   FontSize="13" Text="Плагин показывает личные сообщения и упоминания в острове."/>
-                        <TextBlock Margin="12,10,12,0" TextWrapping="Wrap" FontSize="13"
-                                   Text="1. Скачайте плагин для своей модификации.&#x0a;2. Перенесите файл или распакованную папку в каталог модификации.&#x0a;3. Включите плагин. Для Vencord сначала пересоберите клиент."/>
-                        <Grid Margin="12,10,12,0">
-                            <Grid.Resources>
-                                <LinearGradientBrush x:Key="PluginPathFade" StartPoint="0,0" EndPoint="1,0">
-                                    <GradientStop Color="Black" Offset="0.74"/>
-                                    <GradientStop Color="Transparent" Offset="1"/>
-                                </LinearGradientBrush>
-                                <Style x:Key="PluginCopy" TargetType="Button" BasedOn="{StaticResource ChipButton}">
-                                    <Setter Property="Height" Value="26"/>
-                                    <Setter Property="Width" Value="30"/>
-                                    <Setter Property="Padding" Value="0"/>
-                                    <Setter Property="Margin" Value="4,0,0,0"/>
-                                </Style>
-                                <Geometry x:Key="PluginCopyIcon">M6,1 H13 V11 H11 V3 H6 Z M2,5 H9 V14 H2 Z M4,7 V12 H7 V7 Z</Geometry>
-                            </Grid.Resources>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="32"/>
-                                <RowDefinition Height="32"/>
-                            </Grid.RowDefinitions>
-                            <Button Style="{StaticResource ChipButton}" Click="ChooseVencordFolder_Click" Height="26" Margin="0"
-                                    Padding="7,0" HorizontalContentAlignment="Left" ToolTip="Выбрать папку исходников Vencord">
-                                <TextBlock x:Name="VencordInstallPath" OpacityMask="{StaticResource PluginPathFade}" TextTrimming="CharacterEllipsis"/>
-                            </Button>
-                            <Button Grid.Column="1" Style="{StaticResource PluginCopy}" Click="CopyVencordPath_Click"
-                                    AutomationProperties.Name="Скопировать путь Vencord" ToolTip="Скопировать путь Vencord">
-                                <Path Data="{StaticResource PluginCopyIcon}" Fill="{StaticResource Dim}" Width="13" Height="13" Stretch="Uniform"/>
-                            </Button>
-                            <TextBlock x:Name="BetterDiscordInstallPath" Grid.Row="1" Margin="7,0,0,0" VerticalAlignment="Center"
-                                       Foreground="{StaticResource Dim}" OpacityMask="{StaticResource PluginPathFade}" TextTrimming="CharacterEllipsis"/>
-                            <Button Grid.Row="1" Grid.Column="1" Style="{StaticResource PluginCopy}" Click="CopyBetterDiscordPath_Click"
-                                    AutomationProperties.Name="Скопировать путь BetterDiscord" ToolTip="Скопировать путь BetterDiscord">
-                                <Path Data="{StaticResource PluginCopyIcon}" Fill="{StaticResource Dim}" Width="13" Height="13" Stretch="Uniform"/>
-                            </Button>
+                <Grid x:Name="DiscordPluginPage" Width="342" Height="218" HorizontalAlignment="Center" VerticalAlignment="Top">
+                    <Grid.Resources>
+                        <BitmapImage x:Key="BetterDiscordLogo" UriSource="Assets/Discord/BetterDiscord.png" DecodePixelWidth="32"/>
+                        <BitmapImage x:Key="VencordLogo" UriSource="Assets/Discord/Vencord.png" DecodePixelWidth="40"/>
+                    </Grid.Resources>
+                    <local:RowList x:Name="DiscordPluginRows" Margin="10,8,10,10">
+                        <Button Style="{StaticResource BackButton}" Content="ПЛАГИНЫ DISCORD" Click="DiscordPluginBack_Click"/>
+                        <Grid Height="40" Margin="12,0">
+                            <Image Source="{StaticResource BetterDiscordLogo}" Width="19" Height="19"
+                                   HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                            <TextBlock Style="{StaticResource RowLabel}" Text="BetterDiscord" FontSize="13.5"/>
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                <TextBlock x:Name="BetterDiscordPluginState" FontSize="11.5"
+                                           Foreground="{StaticResource Dim}" VerticalAlignment="Center"/>
+                                <Ellipse x:Name="BetterDiscordPluginDot" Width="7" Height="7" Margin="6,0,0,0"
+                                         Fill="{StaticResource Faint}" VerticalAlignment="Center"/>
+                            </StackPanel>
                         </Grid>
-                        <TextBlock x:Name="DiscordPluginFeedback" Margin="12,5,12,0" Height="30" TextWrapping="Wrap"
-                                   Foreground="{StaticResource Dim}" FontSize="12"/>
-                        <Grid Height="36" Margin="4,5,4,0">
-                            <UniformGrid x:Name="DiscordPluginDownload" Columns="2">
-                                <Button x:Name="VencordDownload" Style="{StaticResource ChipButton}" Click="DiscordPluginDownload_Click"
-                                        Content="Vencord" Margin="0,0,4,0" ToolTip="Скачать DynamicIslandVencord.zip"/>
-                                <Button Style="{StaticResource ChipButton}" Click="DiscordPluginDownload_Click"
-                                        Content="BetterDiscord" Margin="4,0,0,0" ToolTip="Скачать DynamicIslandDiscordBridge.plugin.js"/>
-                            </UniformGrid>
-                            <Grid x:Name="DiscordPluginLoad" Margin="8,0" Visibility="Collapsed">
-                                <local:Ring x:Name="DiscordPluginRing" Width="22" Height="22" Thickness="3" Progress="0"
-                                            Stroke="{StaticResource Orange}" RenderTransformOrigin="0.5,0.5"
-                                            HorizontalAlignment="Left" VerticalAlignment="Center">
-                                    <local:Ring.RenderTransform>
-                                        <ScaleTransform ScaleX="-1"/>
-                                    </local:Ring.RenderTransform>
-                                </local:Ring>
-                                <TextBlock Text="Скачиваю" FontSize="13.5" Foreground="White" Margin="34,0,0,0" VerticalAlignment="Center"/>
-                                <TextBlock x:Name="DiscordPluginBytes" FontSize="13.5" Foreground="{StaticResource Dim}"
-                                           HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                        <Button x:Name="BetterDiscordPluginAction" Style="{StaticResource RowButton}" Height="34"
+                                Click="BetterDiscordPluginAction_Click" Visibility="Collapsed">
+                            <Grid>
+                                <local:Icon x:Name="BetterDiscordPluginActionIcon" Style="{StaticResource RowIcon}" Kind="Plus"/>
+                                <TextBlock x:Name="BetterDiscordPluginActionText" Style="{StaticResource RowLabel}" Text="Установить плагин"/>
                             </Grid>
-                        </Grid>
-                    </StackPanel>
+                        </Button>
+                        <Button x:Name="BetterDiscordPluginExport" Style="{StaticResource RowButton}" Height="34"
+                                Click="DiscordPluginExport_Click" AutomationProperties.Name="Сохранить файл BetterDiscord">
+                            <Grid>
+                                <local:Icon Style="{StaticResource RowIcon}" Kind="Update"/>
+                                <TextBlock Style="{StaticResource RowLabel}" Text="Сохранить файл…"/>
+                            </Grid>
+                        </Button>
+                        <Button Style="{StaticResource RowButton}" Height="34"
+                                Click="CopyBetterDiscordPluginPath_Click" AutomationProperties.Name="Скопировать путь к плагинам BetterDiscord">
+                            <Grid>
+                                <Path Data="M6,1 H13 V11 H11 V3 H6 Z M2,5 H9 V14 H2 Z M4,7 V12 H7 V7 Z"
+                                      Fill="{StaticResource Dim}" Width="15" Height="15" Stretch="Uniform" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                <TextBlock Style="{StaticResource RowLabel}" Text="Скопировать путь"/>
+                            </Grid>
+                        </Button>
+                        <Border Height="1" Margin="12,4" Background="#1AFFFFFF"/>
+                        <Button Style="{StaticResource RowButton}" Height="40" Click="VencordPluginReadme_Click"
+                                AutomationProperties.Name="Vencord. Открыть инструкцию по установке">
+                            <Grid>
+                                <Image Source="{StaticResource VencordLogo}" Width="17" Height="17"
+                                       HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                                <TextBlock Style="{StaticResource RowLabel}" Text="Vencord"/>
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                                    <TextBlock x:Name="VencordPluginState" FontSize="11.5"
+                                               Foreground="{StaticResource Dim}" VerticalAlignment="Center"/>
+                                    <Ellipse x:Name="VencordPluginDot" Width="7" Height="7" Margin="6,0,0,0"
+                                             Fill="{StaticResource Faint}" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Grid>
+                        </Button>
+                        <TextBlock x:Name="DiscordPluginFeedback" Margin="12,4,12,0" FontSize="11.5" Visibility="Collapsed"
+                                   TextWrapping="Wrap" Foreground="{StaticResource Dim}" AutomationProperties.LiveSetting="Polite"/>
+                    </local:RowList>
                 </Grid>
 
                 <Grid x:Name="DiscordVoicePage" Width="340" Height="296" HorizontalAlignment="Center" VerticalAlignment="Top">
@@ -1543,6 +1543,17 @@
                                 <local:Icon Style="{StaticResource RowIcon}" Kind="Timer"/>
                                 <TextBlock Style="{StaticResource RowLabel}" Text="Сколько висит, сек"/>
                                 <local:Segments x:Name="DiscordMessageTimeSegments" Style="{StaticResource RowSegments}" Labels="3|6|10"/>
+                            </Grid>
+                        </Button>
+                        <Button x:Name="DiscordMessagesPluginHint" Style="{StaticResource RowButton}" Height="36"
+                                Margin="0,2,0,0" Click="DiscordMessagesPluginHint_Click" Visibility="Collapsed">
+                            <Grid>
+                                <Path Fill="#ECB66A" Width="17" Height="17" Stretch="Uniform"
+                                      HorizontalAlignment="Left" VerticalAlignment="Center"
+                                      Data="F0 M4,3 H20 A2,2 0 0 1 22,5 V16 A2,2 0 0 1 20,18 H9 L4,22 V18 A2,2 0 0 1 2,16 V5 A2,2 0 0 1 4,3 Z M4,5 V16 H6 V18 L8.5,16 H20 V5 Z M11,7 H13 V11 H11 Z M11,12.5 H13 V14.5 H11 Z"/>
+                                <TextBlock Style="{StaticResource RowLabel}" Foreground="{StaticResource Dim}"
+                                           FontSize="12.5" Text="Для сообщений нужен плагин"/>
+                                <local:Icon Style="{StaticResource RowChevron}"/>
                             </Grid>
                         </Button>
                     </local:RowList>
@@ -1881,15 +1892,19 @@
                         <local:RowList>
                             <Button Style="{StaticResource BackButton}" Content="ОБНОВЛЕНИЕ" Click="UpdateBack_Click"/>
                         </local:RowList>
-                        <StackPanel Orientation="Horizontal" Margin="12,2,12,0">
+                        <Grid Margin="12,2,12,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
                             <TextBlock x:Name="UpdateVersion" FontSize="30" FontWeight="SemiBold" Foreground="White"
                                        FontFamily="{StaticResource Display}"/>
-                            <TextBlock x:Name="UpdateFrom" FontSize="13.5" Foreground="{StaticResource Dim}"
-                                       Margin="9,0,0,5" VerticalAlignment="Bottom"/>
-                        </StackPanel>
+                            <TextBlock x:Name="UpdateFrom" Grid.Column="1" FontSize="13" Foreground="{StaticResource Dim}"
+                                       TextWrapping="Wrap" Margin="10,0,0,3" VerticalAlignment="Center"/>
+                        </Grid>
                         <StackPanel x:Name="UpdateNotes" Margin="12,10,12,0">
                             <TextBlock Style="{StaticResource Caption}" Text="ЧТО НОВОГО"/>
-                            <Border x:Name="UpdateNotesBox" MaxHeight="216" Margin="0,5,0,0" ClipToBounds="True">
+                            <Border x:Name="UpdateNotesBox" Margin="0,5,0,0" ClipToBounds="True">
                                 <Border.OpacityMask>
                                     <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
                                         <GradientStop x:Name="UpdateNotesEdgeTop" Color="Black" Offset="0"/>
@@ -1908,7 +1923,7 @@
                                 </StackPanel>
                             </Border>
                         </StackPanel>
-                        <Grid Height="36" Margin="4,14,4,0">
+                        <Grid x:Name="UpdateActions" Height="36" Margin="4,14,4,0">
                             <Button x:Name="UpdateButton" Click="Update_Click" Style="{StaticResource ChipButton}" Height="36" Margin="0"
                                     FontSize="13.5" FontWeight="SemiBold"/>
                             <Grid x:Name="UpdateLoad" Margin="8,0" Visibility="Collapsed">
@@ -2508,32 +2523,17 @@
                 </StackPanel>
             </Grid>
         </Border>
-        <Border x:Name="DiscordMusicPill" Width="66" Height="34" CornerRadius="17"
-                Background="#F0151518" BorderBrush="#38FFFFFF" BorderThickness="1"
-                Visibility="Collapsed" HorizontalAlignment="Center" VerticalAlignment="Top"
-                Cursor="Hand" ToolTip="Нажмите, чтобы открыть плеер. Потяните вправо для увеличения, влево для уменьшения."
-                MouseLeftButtonDown="DiscordMusicDown" MouseLeftButtonUp="DiscordMusicUp"
-                LostMouseCapture="DiscordMusicCaptureLost">
+        <Border x:Name="DiscordDetachedVoice" Width="64" Height="34" Visibility="Collapsed" Background="Transparent"
+                MouseEnter="DiscordDetachedVoiceEnter" MouseLeave="DiscordDetachedVoiceLeave"
+                MouseLeftButtonDown="DiscordDetachedVoiceDown" MouseLeftButtonUp="DiscordDetachedVoiceUp"
+                HorizontalAlignment="Center" VerticalAlignment="Top" IsHitTestVisible="False" RenderTransformOrigin="0,0">
             <Border.RenderTransform>
-                <TranslateTransform x:Name="DiscordMusicMove"/>
+                <TransformGroup>
+                    <ScaleTransform x:Name="DiscordDetachedVoiceScale"/>
+                    <TranslateTransform x:Name="DiscordDetachedVoiceMove"/>
+                </TransformGroup>
             </Border.RenderTransform>
-            <Grid ClipToBounds="True">
-                <local:Aura x:Name="DiscordMusicGlow" Height="34" VerticalAlignment="Bottom" IsHitTestVisible="False"/>
-                <Grid x:Name="DiscordMusicCover" Width="22" Height="22" HorizontalAlignment="Left" Margin="5,0,0,0" VerticalAlignment="Center">
-                    <Border Background="{StaticResource ArtPlaceholder}" CornerRadius="6"/>
-                    <local:Cover x:Name="DiscordMusicArt" Radius="6"/>
-                </Grid>
-                <StackPanel x:Name="DiscordMusicInfo" Margin="34,0,34,0" VerticalAlignment="Center">
-                    <TextBlock x:Name="DiscordMusicTitle" FontSize="11.5" FontWeight="SemiBold" TextTrimming="CharacterEllipsis"/>
-                    <TextBlock x:Name="DiscordMusicArtist" FontSize="10" Foreground="{StaticResource Dim}" TextTrimming="CharacterEllipsis"/>
-                </StackPanel>
-                <Canvas x:Name="DiscordMusicLyrics" Margin="34,0,34,1" Height="15" VerticalAlignment="Bottom" ClipToBounds="True" IsHitTestVisible="False">
-                    <local:CompactLyric x:Name="DiscordLyricA" Opacity="0"/>
-                    <local:CompactLyric x:Name="DiscordLyricB" Opacity="0"/>
-                </Canvas>
-                <local:Equalizer x:Name="DiscordMusicEq" Bars="8" Few="5" Width="18" Height="14"
-                                 HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,8,0" IsHitTestVisible="False"/>
-            </Grid>
+            <Grid x:Name="DiscordDetachedVoiceContent" ClipToBounds="True"/>
         </Border>
     </Grid>
 </Window>

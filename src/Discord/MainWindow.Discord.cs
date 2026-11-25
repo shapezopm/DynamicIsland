@@ -79,13 +79,14 @@ public partial class MainWindow
     {
         if (!DiscordActive || _discordDemo) return;
         bool linked = _discord.Linked;
-        if (linked == _discordAnnouncedLinked || _clock.Elapsed - _discordLinkChangedAt < TimeSpan.FromSeconds(1)
-            || _ringing || _panel != Panel.None || _hiddenByFullscreen || _sentAway || _transientView is View.Message or View.Notice)
+        if (linked == _discordAnnouncedLinked || _clock.Elapsed - _discordLinkChangedAt < TimeSpan.FromSeconds(1))
             return;
 
         _discordAnnouncedLinked = linked;
+        if (linked && _discord.IsBridgeConnected) return;
         Notify(linked ? Glyph.Check : Glyph.Minus, linked ? _green : _dim,
-            "Discord", linked ? "Подключён" : "Связь потеряна");
+            "Discord", linked ? "Подключён" : "Связь потеряна", key: "discord-link:" + linked,
+            isRelevant: () => DiscordActive && linked == _discord.Linked && (!linked || !_discord.IsBridgeConnected));
     }
 
     void SyncDiscordTexts()
@@ -101,15 +102,21 @@ public partial class MainWindow
             (true, false) => "Напрямую",
             _ => "Через плагин",
         };
+        RefreshDiscordMessagesPluginHint();
     }
 
-    void DiscordPlugin_Click(object sender, RoutedEventArgs e)
+    void DiscordPlugin_Click(object sender, RoutedEventArgs e) => OpenDiscordPlugins(Panel.Discord);
+
+    void DiscordMessagesPluginHint_Click(object sender, RoutedEventArgs e) => OpenDiscordPlugins(Panel.DiscordMessages);
+
+    void OpenDiscordPlugins(Panel back)
     {
+        _discordPluginBackPanel = back;
         RefreshDiscordPluginPage();
         ShowPanel(Panel.DiscordPlugin);
     }
 
-    void DiscordPluginBack_Click(object sender, RoutedEventArgs e) => ShowPanel(Panel.Discord);
+    void DiscordPluginBack_Click(object sender, RoutedEventArgs e) => ShowPanel(_discordPluginBackPanel);
 
     // ---------- звонок ----------
 
@@ -373,6 +380,15 @@ public partial class MainWindow
         return false;
     }
 
+    bool _discordSettingsFromCall;
+
+    void VoiceSettings_Click(object sender, RoutedEventArgs e)
+    {
+        _discordSettingsFromCall = true;
+        SyncDiscordTexts();
+        ShowPanel(Panel.Discord);
+    }
+
     void VoiceMute_Click(object sender, RoutedEventArgs e) => _discord.ToggleMute();
 
     void VoiceDeafen_Click(object sender, RoutedEventArgs e) => _discord.ToggleDeafen();
@@ -390,16 +406,15 @@ public partial class MainWindow
     {
         if (!ShouldShow(message)) return;
 
-        MessageAvatar.Source = message.Author.Avatar;
-        MessageAvatar.Label = message.Author.Name;
-        MessageAuthor.Text = message.Author.Name;
-        MessageWhere.Text = Where(message);
-        MessageText.Text = Settings.DiscordPreview ? Describe(message) : "Новое сообщение";
-        _messageOpen = () => OpenChat(message.DeepLink);
-
-        bool shown = _view == View.Message;
-        ShowTransient(View.Message, Settings.DiscordMessageSeconds);
-        if (shown) FadeIn(MessageView);
+        EnqueueNotification(View.Message, Settings.DiscordMessageSeconds, () =>
+        {
+            MessageAvatar.Source = message.Author.Avatar;
+            MessageAvatar.Label = message.Author.Name;
+            MessageAuthor.Text = message.Author.Name;
+            MessageWhere.Text = Where(message);
+            MessageText.Text = Settings.DiscordPreview ? Describe(message) : "Новое сообщение";
+            _messageOpen = () => OpenChat(message.DeepLink);
+        }, "discord-message:" + message.Id, () => ShouldShow(message));
     }
 
     bool ShouldShow(ChatMessage message)
@@ -475,13 +490,29 @@ public partial class MainWindow
         UpdateTargets();
     }
 
-    void DiscordBack_Click(object sender, RoutedEventArgs e) => ShowPanel(Panel.Menu);
+    void DiscordBack_Click(object sender, RoutedEventArgs e) =>
+        ShowPanel(_discordSettingsFromCall && ShowsVoice ? Panel.Voice : Panel.Menu);
 
     void DiscordVoiceRow_Click(object sender, RoutedEventArgs e) => ShowPanel(Panel.DiscordVoice);
 
     void DiscordVoiceBack_Click(object sender, RoutedEventArgs e) => ShowPanel(Panel.Discord);
 
-    void DiscordMessagesRow_Click(object sender, RoutedEventArgs e) => ShowPanel(Panel.DiscordMessages);
+    void DiscordMessagesRow_Click(object sender, RoutedEventArgs e)
+    {
+        RefreshDiscordMessagesPluginHint();
+        ShowPanel(Panel.DiscordMessages);
+    }
+
+    void RefreshDiscordMessagesPluginHint()
+    {
+        bool show = !_discordDemo && !_discord.IsBridgeConnected;
+        DiscordMessagesPluginHint.SetVisible(show);
+        double baseHeight = PillShapes[View.DiscordMessages].Height;
+        double height = show ? baseHeight + DiscordMessagesPluginHint.Height + DiscordMessagesPluginHint.Margin.Top : baseHeight;
+        if (DiscordMessagesPage.Height == height) return;
+        DiscordMessagesPage.Height = height;
+        if (_view == View.DiscordMessages) UpdateTargets();
+    }
 
     void DiscordMessagesBack_Click(object sender, RoutedEventArgs e) => ShowPanel(Panel.Discord);
 

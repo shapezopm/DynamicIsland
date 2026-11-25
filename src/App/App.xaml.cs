@@ -1,6 +1,7 @@
 using System.IO;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Controls;
 
 namespace DynamicIsland;
 
@@ -13,6 +14,14 @@ public partial class App : Application
     static readonly object LogLock = new();
 
     Mutex? _mutex;
+
+    static App()
+    {
+        // Keep tooltip text available to automation peers without opening native popup windows.
+        ToolTipEventHandler suppressToolTip = (_, e) => e.Handled = true;
+        EventManager.RegisterClassHandler(typeof(FrameworkElement), ToolTipService.ToolTipOpeningEvent, suppressToolTip, true);
+        EventManager.RegisterClassHandler(typeof(FrameworkContentElement), ToolTipService.ToolTipOpeningEvent, suppressToolTip, true);
+    }
 
     protected override void OnStartup(StartupEventArgs e)
     {

@@ -3,6 +3,7 @@ using System.Globalization;
 using System.Windows;
 using System.Windows.Documents;
 using System.Windows.Media;
+using System.Windows.Threading;
 
 namespace DynamicIsland;
 
@@ -13,6 +14,7 @@ public sealed class Lyric : FrameworkElement
     const double SweepEdge = 26;
     const double RowEdgeSlack = 0.5;
     const double PartedRowSlack = 4;
+    const double PartingPointerMargin = 28;
     const char FirstJoinedLetter = '֐', LastJoinedLetter = 'ࣿ';
 
     const int DotCount = 3;
@@ -46,6 +48,7 @@ public sealed class Lyric : FrameworkElement
     double[] _letterCenters = [];
     int[] _letterSteps = [];
     bool _partMoving;
+    bool _partingQueued, _partingReady;
     bool _current, _active;
     Color? _paintAccent;
     SolidColorBrush? _glowBrush;
@@ -156,7 +159,8 @@ public sealed class Lyric : FrameworkElement
             _masks[i] = new LinearGradientBrush { MappingMode = BrushMappingMode.Absolute, EndPoint = new Point(Math.Max(width, 1), 0) };
             foreach (double offset in MaskOffsets) _masks[i].GradientStops.Add(new GradientStop(Colors.Black, offset));
         }
-        PrepareParting(face, width, rows);
+        _parting = null;
+        _partingReady = _partMoving = false;
         UpdateFill();
         return new Size(width, rows * LineHeight);
     }
@@ -167,6 +171,9 @@ public sealed class Lyric : FrameworkElement
         bool living = animate && TextEffect is (LyricFx.Lift or LyricFx.Glow) && !_wordless && _active;
         if (_parting == null)
         {
+            if (pointer is { } at && at.Y >= -PartingPointerMargin && at.Y <= ActualHeight + PartingPointerMargin
+                && at.X >= -PartingPointerMargin && at.X <= ActualWidth + PartingPointerMargin)
+                QueuePartingPreparation();
             if (living) InvalidateVisual();
             return living;
         }
@@ -181,6 +188,22 @@ public sealed class Lyric : FrameworkElement
     {
         if (_parting?.Reset() == true) InvalidateVisual();
         _partMoving = false;
+    }
+
+    void QueuePartingPreparation()
+    {
+        if (_partingReady || _partingQueued || _text is null) return;
+        _partingQueued = true;
+        Dispatcher.BeginInvoke(DispatcherPriority.Background, () =>
+        {
+            _partingQueued = false;
+            if (_partingReady || !IsVisible || _text is not { } text) return;
+            _partingReady = true;
+            var face = new Typeface((FontFamily)GetValue(TextElement.FontFamilyProperty), FontStyles.Normal,
+                FontWeights.SemiBold, FontStretches.Normal);
+            PrepareParting(face, text.MaxTextWidth, _rowWidths.Length);
+            if (_parting is not null) InvalidateVisual();
+        });
     }
 
     void PrepareParting(Typeface face, double width, int rows)
@@ -276,7 +299,11 @@ public sealed class Lyric : FrameworkElement
     protected override void OnRender(DrawingContext dc)
     {
         if (_wordless) DrawDots(dc);
-        else if (_text != null) DrawWords(dc, _text);
+        else if (_text != null)
+        {
+            if (TextEffect != LyricFx.Off && EffectVisible) QueuePartingPreparation();
+            DrawWords(dc, _text);
+        }
     }
 
     void DrawDots(DrawingContext dc)

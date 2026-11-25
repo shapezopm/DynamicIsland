@@ -1,17 +1,15 @@
+using System.Diagnostics;
 using System.IO;
-using System.Net;
-using System.Net.Http;
 using System.Windows;
-using System.Windows.Media.Animation;
 using Microsoft.Win32;
-using static DynamicIsland.Motion;
 
 namespace DynamicIsland;
 
 public partial class MainWindow
 {
-    bool _downloadingDiscordPlugin, _pluginLinked, _pluginNoticePending;
-    string? _pluginDownloadMessage;
+    bool _installingDiscordPlugin, _pluginLinked;
+    string? _pluginMessage;
+    Panel _discordPluginBackPanel = Panel.Discord;
 
     bool VencordPluginConnected => _discord.IsBridgeConnected
         && _discord.PluginVersion.EndsWith("-vencord", StringComparison.Ordinal);
@@ -19,137 +17,123 @@ public partial class MainWindow
     void TrackDiscordPluginConnection()
     {
         bool linked = _discord.IsBridgeConnected;
-        if (linked != _pluginLinked)
+        if (linked && !_pluginLinked)
         {
-            _pluginNoticePending = linked && !_discordDemo;
-            if (linked) _pluginDownloadMessage = null;
+            _pluginMessage = null;
+            if (!_discordDemo && DiscordActive)
+                Notify(Glyph.Check, _green, VencordPluginConnected ? "Vencord" : "BetterDiscord", "Плагин подключён",
+                    key: "discord-plugin", isRelevant: () => DiscordActive && _discord.IsBridgeConnected);
         }
         _pluginLinked = linked;
         if (_panel == Panel.DiscordPlugin) RefreshDiscordPluginPage();
     }
 
-    void ShowDiscordPluginNotice()
-    {
-        if (_panel == Panel.DiscordPlugin) RefreshDiscordPluginPage();
-        if (!_pluginNoticePending || !_pluginLinked || !DiscordActive || _ringing || _panel != Panel.None
-            || _hiddenByFullscreen || _sentAway || _transientView is View.Message or View.Notice) return;
-
-        _pluginNoticePending = false;
-        Notify(Glyph.Check, _green, VencordPluginConnected ? "Vencord" : "BetterDiscord", "Плагин подключён");
-    }
-
     void RefreshDiscordPluginPage()
     {
-        DiscordPluginDownload.SetVisible(!_downloadingDiscordPlugin);
-        DiscordPluginDownload.IsEnabled = PluginInstaller.Configured;
-        DiscordPluginLoad.SetVisible(_downloadingDiscordPlugin);
-        string? vencordPath = VencordInstallDirectory;
-        VencordInstallPath.Text = vencordPath is null ? "Vencord: выбрать исходники" : $"Vencord: {vencordPath}";
-        VencordInstallPath.ToolTip = vencordPath ?? "Выбрать папку исходников Vencord";
-        BetterDiscordInstallPath.Text = $"BetterDiscord: {PluginInstaller.BetterDiscordPath}";
-        BetterDiscordInstallPath.ToolTip = PluginInstaller.BetterDiscordPath;
-        DiscordPluginFeedback.Text = _pluginDownloadMessage
-            ?? (_pluginLinked ? $"Плагин подключён · {(VencordPluginConnected ? "Vencord" : "BetterDiscord")}"
-                : File.Exists(Path.Combine(PluginInstaller.BetterDiscordPath, PluginInstaller.FileName))
-                    ? "Плагин BetterDiscord найден. Включите его в клиенте."
-                    : PluginInstaller.Configured ? "" : "Репозиторий для скачивания не настроен.");
+        bool vencordConnected = VencordPluginConnected;
+        bool betterConnected = !_discordDemo && _discord.IsBridgeConnected && !vencordConnected;
+        bool betterFound = PluginInstaller.HasBetterDiscord;
+        bool betterInstalled = PluginInstaller.HasBetterDiscordPlugin;
+        BetterDiscordPluginState.Text = betterConnected ? "Подключён"
+            : betterInstalled ? "Файл установлен" : betterFound ? "Нет плагина" : "Мод не найден";
+        BetterDiscordPluginDot.Fill = betterConnected ? _green : betterInstalled ? _indigo : betterFound ? _orange : _red;
+        BetterDiscordPluginActionText.Text = betterInstalled ? "Открыть папку плагинов" : "Установить плагин";
+        BetterDiscordPluginActionIcon.Kind = betterInstalled ? Glyph.Folder : Glyph.Plus;
+        BetterDiscordPluginAction.SetVisible(betterFound);
+        BetterDiscordPluginAction.IsEnabled = !_installingDiscordPlugin;
+        BetterDiscordPluginExport.IsEnabled = !_installingDiscordPlugin;
+
+        bool vencordFound = vencordConnected || PluginInstaller.HasVencord;
+        VencordPluginState.Text = vencordConnected ? "Подключён" : vencordFound ? "Не подключён" : "Мод не найден";
+        VencordPluginDot.Fill = vencordConnected ? _green : vencordFound ? _orange : _red;
+        DiscordPluginFeedback.Text = _pluginMessage
+            ?? (betterInstalled && !betterConnected ? "Включите DynamicIslandDiscordBridge в Discord." : "");
+        DiscordPluginFeedback.SetVisible(DiscordPluginFeedback.Text.Length > 0);
+
+        DiscordPluginRows.Measure(new Size(DiscordPluginPage.Width, double.PositiveInfinity));
+        double height = Math.Ceiling(DiscordPluginRows.DesiredSize.Height);
+        if (DiscordPluginPage.Height == height) return;
+        DiscordPluginPage.Height = height;
+        if (_view == View.DiscordPlugin) UpdateTargets();
     }
 
-    static string? VencordInstallDirectory
+    async void BetterDiscordPluginAction_Click(object sender, RoutedEventArgs e)
     {
-        get
+        if (_installingDiscordPlugin) return;
+        if (PluginInstaller.HasBetterDiscordPlugin)
         {
-            string root = Settings.VencordSourceDirectory;
-            if (root.Length == 0)
-                root = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "Vencord");
-            return IsVencordSource(root) ? Path.Combine(root, "src", "userplugins") : null;
+            OpenPluginLocation(PluginInstaller.BetterDiscordPath);
+            return;
         }
+        await RunPluginActionAsync(PluginInstaller.InstallBetterDiscordAsync, "Включите DynamicIslandDiscordBridge в Discord.");
     }
 
-    static bool IsVencordSource(string root) =>
-        Directory.Exists(Path.Combine(root, "src", "plugins")) && File.Exists(Path.Combine(root, "pnpm-workspace.yaml"));
-
-    void ChooseVencordFolder_Click(object sender, RoutedEventArgs e) => ChooseVencordFolder();
-
-    bool ChooseVencordFolder()
+    void CopyBetterDiscordPluginPath_Click(object sender, RoutedEventArgs e)
     {
-        var dialog = new OpenFolderDialog { Title = "Выберите папку исходников Vencord" };
-        if (dialog.ShowDialog(this) != true) return false;
-        if (!IsVencordSource(dialog.FolderName))
+        _pluginMessage = Copy(PluginInstaller.BetterDiscordPath) ? "Путь скопирован" : "Не удалось скопировать путь.";
+        RefreshDiscordPluginPage();
+    }
+
+    void VencordPluginReadme_Click(object sender, RoutedEventArgs e)
+    {
+        string local = Path.Combine(AppContext.BaseDirectory, "Vencord-README.md");
+        if (File.Exists(local))
         {
-            _pluginDownloadMessage = "Выберите корень исходников Vencord, где есть папка src.";
-            RefreshDiscordPluginPage();
-            return false;
+            OpenPluginLocation(local);
+            return;
         }
-        Settings.VencordSourceDirectory = dialog.FolderName;
-        _pluginDownloadMessage = null;
-        RefreshDiscordPluginPage();
-        return true;
+
+        string repository = Updater.Repository is { } configured && Updater.IsRepository(configured)
+            ? configured : "shapezopm/DynamicIsland";
+        OpenPluginLocation($"https://github.com/{repository}/blob/v{Updater.CurrentVersion}/scripts/vencord-setup/README.md");
     }
 
-    void CopyVencordPath_Click(object sender, RoutedEventArgs e)
+    void OpenPluginLocation(string location)
     {
-        if (VencordInstallDirectory is null && !ChooseVencordFolder()) return;
-        if (VencordInstallDirectory is { } path) CopyPluginPath(path);
-    }
-
-    void CopyBetterDiscordPath_Click(object sender, RoutedEventArgs e) => CopyPluginPath(PluginInstaller.BetterDiscordPath);
-
-    void CopyPluginPath(string path)
-    {
-        _pluginDownloadMessage = Copy(path) ? "Полный путь скопирован." : "Не удалось скопировать путь.";
-        RefreshDiscordPluginPage();
-    }
-
-    async void DiscordPluginDownload_Click(object sender, RoutedEventArgs e)
-    {
-        if (_downloadingDiscordPlugin || !PluginInstaller.Configured) return;
-
-        bool vencord = ReferenceEquals(sender, VencordDownload);
-        string assetName = vencord ? PluginInstaller.VencordFileName : PluginInstaller.FileName;
-        var dialog = new SaveFileDialog
-        {
-            FileName = assetName,
-            Filter = vencord ? "Архив Vencord (*.zip)|*.zip" : "Плагин BetterDiscord (*.plugin.js)|*.plugin.js",
-            InitialDirectory = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "Downloads"),
-        };
-        if (dialog.ShowDialog(this) != true) return;
-
-        _downloadingDiscordPlugin = true;
-        _pluginDownloadMessage = null;
-        DiscordPluginRing.BeginAnimation(Ring.ProgressProperty, null);
-        DiscordPluginRing.Progress = 0;
-        DiscordPluginBytes.Text = "Подключаюсь…";
-        RefreshDiscordPluginPage();
-        long lastPercent = -1;
         try
         {
-            bool saved = await PluginInstaller.DownloadAsync(assetName, dialog.FileName, (done, total) =>
-            {
-                long percent = done * 100 / total;
-                if (percent == lastPercent) return;
-                lastPercent = percent;
-                DiscordPluginBytes.Text = $"{FormatPluginSize(done)} из {FormatPluginSize(total)}";
-                DiscordPluginRing.BeginAnimation(Ring.ProgressProperty, new DoubleAnimation((double)done / total, Ms(200)));
-            });
-            _pluginDownloadMessage = saved ? (vencord ? "Распакуйте папку из архива в src/userplugins." : "Переместите файл в папку модификации.")
-                : "В последнем релизе пока нет файла плагина.";
-        }
-        catch (HttpRequestException ex) when (ex.StatusCode == HttpStatusCode.NotFound)
-        {
-            _pluginDownloadMessage = "Репозиторий или публичный релиз пока недоступен.";
+            using var process = Process.Start(new ProcessStartInfo(location) { UseShellExecute = true });
         }
         catch (Exception ex)
         {
             App.Log(ex);
-            _pluginDownloadMessage = "Не удалось скачать файл. Попробуйте ещё раз.";
-        }
-        finally
-        {
-            _downloadingDiscordPlugin = false;
+            _pluginMessage = "Не удалось открыть. Попробуйте ещё раз.";
             RefreshDiscordPluginPage();
         }
     }
 
-    static string FormatPluginSize(long bytes) => $"{bytes / 1024d:0.#} КБ";
+    async void DiscordPluginExport_Click(object sender, RoutedEventArgs e)
+    {
+        if (_installingDiscordPlugin) return;
+        var dialog = new SaveFileDialog
+        {
+            FileName = PluginInstaller.FileName,
+            Filter = "Плагин BetterDiscord (*.plugin.js)|*.plugin.js",
+            InitialDirectory = PluginInstaller.HasBetterDiscord ? PluginInstaller.BetterDiscordPath : "",
+        };
+        if (dialog.ShowDialog(this) != true) return;
+        await RunPluginActionAsync(() => PluginInstaller.SaveAsync(dialog.FileName), "Файл сохранён.");
+    }
+
+    async Task RunPluginActionAsync(Func<Task> action, string successMessage)
+    {
+        _installingDiscordPlugin = true;
+        _pluginMessage = "Подготавливаю файл…";
+        RefreshDiscordPluginPage();
+        try
+        {
+            await action();
+            _pluginMessage = successMessage;
+        }
+        catch (Exception ex)
+        {
+            App.Log(ex);
+            _pluginMessage = "Не удалось записать файл. Проверьте папку.";
+        }
+        finally
+        {
+            _installingDiscordPlugin = false;
+            RefreshDiscordPluginPage();
+        }
+    }
 }

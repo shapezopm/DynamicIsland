@@ -275,7 +275,7 @@ static class Native
 
         var className = new StringBuilder(ClassNameCapacity);
         GetClassName(foreground, className, className.Capacity);
-        if (className.ToString() is "Progman" or "WorkerW" or "Shell_TrayWnd" or "XamlExplorerHostIslandWindow") return false;
+        if (IsShellOverlay(foreground, className.ToString())) return false;
 
         long style = GetWindowLongPtr(foreground, GWL_STYLE).ToInt64();
         bool framed = (style & WS_CAPTION) == WS_CAPTION || (style & WS_THICKFRAME) != 0;
@@ -291,6 +291,25 @@ static class Native
             return false;
         screen = new Rect(monitor.Left, monitor.Top, monitor.Right - monitor.Left, monitor.Bottom - monitor.Top);
         return true;
+    }
+
+    static bool IsShellOverlay(IntPtr window, string windowClass)
+    {
+        if (windowClass is "Progman" or "WorkerW" or "Shell_TrayWnd" or "XamlExplorerHostIslandWindow"
+            or "#32771" or "MultitaskingViewFrame") return true;
+        if (windowClass != "XamlWindow") return false;
+
+        uint processId = WindowProcessId(window);
+        if (processId == 0) return false;
+        try
+        {
+            using var process = System.Diagnostics.Process.GetProcessById((int)processId);
+            return process.ProcessName is "explorer" or "ShellExperienceHost" or "ShellHost" or "TextInputHost";
+        }
+        catch (Exception ex) when (ex is ArgumentException or InvalidOperationException or System.ComponentModel.Win32Exception)
+        {
+            return false;
+        }
     }
 
     public static bool AllowsFullscreenReveal(IntPtr window)

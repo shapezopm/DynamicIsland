@@ -11,8 +11,7 @@
     <AssemblyName>DynamicIsland</AssemblyName>
     <RootNamespace>DynamicIsland</RootNamespace>
     <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
-    <Version>1.31.1</Version>
-    <InformationalVersion>1.31.1</InformationalVersion>
+    <Version>1.32.2</Version>
     <UpdateRepository Condition="'$(UpdateRepository)' == ''">shapezopm/DynamicIsland</UpdateRepository>
     <PublishReadyToRun>false</PublishReadyToRun>
     <EnableCompressionInSingleFile>false</EnableCompressionInSingleFile>
@@ -23,12 +22,14 @@
     <AssemblyMetadata Include="UpdateRepository" Value="$(UpdateRepository)" />
   </ItemGroup>
 
-  <ItemGroup Condition="'$(PluginRepository)' != ''">
-    <AssemblyMetadata Include="PluginRepository" Value="$(PluginRepository)" />
-  </ItemGroup>
-
   <ItemGroup>
     <Resource Include="Gadgets\*.png" />
+    <Resource Include="Assets\Discord\*.png" />
+    <EmbeddedResource Include="docs/releases/v$(Version).md" LogicalName="ReleaseNotes.md"
+                      Condition="Exists('docs/releases/v$(Version).md')" />
+    <EmbeddedResource Include="src\Discord\DynamicIslandDiscordBridge.plugin.js" LogicalName="DiscordPlugins/DynamicIslandDiscordBridge.plugin.js" />
+    <None Update="scripts\vencord-setup\README.md" TargetPath="Vencord-README.md"
+          CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="Never" />
     <Resource Include="Fonts\*.otf;Fonts\*.ttf" />
     <None Update="Fonts\Unbounded-OFL.txt" CopyToOutputDirectory="PreserveNewest" />
     <Compile Remove="tests\**\*.cs" />

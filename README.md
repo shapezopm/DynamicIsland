@@ -48,7 +48,7 @@
 
 ## Интеграция с Discord
 
-Для голосового канала доступно прямое подключение. Для личных сообщений и упоминаний используйте один из плагинов из Assets релиза.
+Для голосового канала доступно прямое подключение. Для личных сообщений и упоминаний скачайте `Plugins.zip` из Assets релиза и распакуйте папку `Plugins`.
 
-- **Vencord:** распакуйте `DynamicIslandVencord.zip` в `src/userplugins` исходников Vencord и пересоберите клиент. [Установка и проверка](src/Discord/Vencord/dynamicIslandBridge.desktop/README.md).
-- **BetterDiscord:** положите `DynamicIslandDiscordBridge.plugin.js` в папку плагинов BetterDiscord и включите его в клиенте.
+- **Vencord:** в `Plugins/Vencord` запустите `Install-DynamicIslandVencord.cmd` рядом с `DynamicIslandVencord-Build.zip`. [Установка и проверка](scripts/vencord-setup/README.md).
+- **BetterDiscord:** установите плагин из меню островка или скопируйте `DynamicIslandDiscordBridge.plugin.js` из `Plugins/BetterDiscord` в папку плагинов BetterDiscord. Включите плагин в Discord.

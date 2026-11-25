@@ -42,10 +42,15 @@ public partial class MainWindow
 
     Color AccentColor => Settings.Accent ?? _media.Accent;
 
-    bool IsEqVisible => MediaSpots.ContainsKey(_view) || WantsDiscordMusic;
+    bool IsEqVisible => MediaSpots.ContainsKey(_view);
 
     void OnMediaChanged()
     {
+        if (HoldingCallTrack)
+        {
+            UpdateView();
+            return;
+        }
         if (_view == View.MediaBig) RefreshSoundCloudHeart();
         string title = _media.HasTrack ? _media.Name : "";
         bool newTrack = title.Length > 0 && title != _lastTitle;
@@ -60,18 +65,14 @@ public partial class MainWindow
         _source = source;
         SyncTrackShape();
 
-        string artist = string.IsNullOrWhiteSpace(_media.Artist) ? UnknownArtist : LyricsArtistAliases.Canonicalize(_media.Artist);
-        TitleBig.Text = ToastTitle.Text = title;
-        ArtistBig.Text = ToastArtist.Text = _sourceName.Length > 0 ? _sourceName + " · " + artist : artist;
+        string trackArtist = _media.Artist;
+        string artist = string.IsNullOrWhiteSpace(trackArtist) ? UnknownArtist : LyricsArtistAliases.Canonicalize(trackArtist);
+        string artistLabel = _sourceName.Length > 0 ? _sourceName + " · " + artist : artist;
+        TitleBig.Text = title;
+        ArtistBig.Text = artistLabel;
 
-        if (!ReferenceEquals(_cover, _media.Art))
-        {
-            _cover = _media.Art;
-            int heading = _clock.Elapsed.TotalSeconds - _skipAt < SkipMemorySeconds ? _skipDirection : 1;
-            Art.Show(_cover, heading);
-            DiscordMusicArt.Show(_cover, heading);
-            SyncAccent();
-        }
+        if (_activeNotification is not { View: View.Toast, IsRelevant: { } relevant } || relevant())
+            SyncMediaCover();
 
         if (_media.IsPlaying != _shownPlaying)
         {
@@ -80,10 +81,25 @@ public partial class MainWindow
         }
         if (_media.IsPlaying || turned) _lastPlayedAt = DateTime.UtcNow;
 
-        if (turned || (newTrack && _media.IsPlaying)) ShowTransient(View.Toast, ToastSeconds);
+        if (_media.HasTrack && !CallMediaEnabled && (turned || (newTrack && _media.IsPlaying)))
+            EnqueueNotification(View.Toast, ToastSeconds, () =>
+            {
+                ToastTitle.Text = title;
+                ToastArtist.Text = artistLabel;
+            }, "media-toast", () => !CallMediaEnabled && _media.HasTrack
+                && (turned || _media.IsPlaying) && _media.Name == title && _media.Artist == trackArtist && _media.Source == source);
         TrackLyrics();
         UpdateView();
         UpdateLyric();
+    }
+
+    void SyncMediaCover()
+    {
+        if (ReferenceEquals(_cover, _media.Art)) return;
+        _cover = _media.Art;
+        int heading = _clock.Elapsed.TotalSeconds - _skipAt < SkipMemorySeconds ? _skipDirection : 1;
+        Art.Show(_cover, heading);
+        SyncAccent();
     }
 
     static void SwapIcons(FrameworkElement leave, FrameworkElement enter, bool animate)
@@ -144,7 +160,6 @@ public partial class MainWindow
         _accentBrush.BeginAnimation(SolidColorBrush.ColorProperty, new ColorAnimation(AccentColor, time));
         Color[] palette = Settings.Accent is { } own ? CoverPalette.Around(own) : _media.Palette;
         Glow.Tint(palette, time);
-        DiscordMusicGlow.Tint(palette, time);
         PlayerMatrix.Tint(palette, time);
         PlayerLyricWait.Tint(palette, time);
         foreach (RadioButton tile in BackdropStrip.Children) ((BackdropPreview)tile.Content).Tint(palette);
@@ -196,11 +211,6 @@ public partial class MainWindow
         Backdrop backdrop = Settings.Backdrop;
         if (backdrop != Backdrop.Glow) _backdropLevels.Follow(bands, Eq, playing, dt);
         moving |= backdrop == Backdrop.Glow ? Glow.Tick(Eq, now, dt) : AdvanceBackdrop(backdrop, playing, now, dt);
-        if (WantsDiscordMusic)
-        {
-            moving |= DiscordMusicEq.Tick(bands, level, playing, now, dt);
-            moving |= DiscordMusicGlow.Tick(DiscordMusicEq, now, dt);
-        }
         return IsEqVisible && (playing || moving);
     }
 
@@ -213,6 +223,8 @@ public partial class MainWindow
 
     void FitMediaViews(double w, double h)
     {
+        double compactContent = Math.Clamp((w - CallMediaMiniWidth) / 32, 0, 1);
+        Eq.Opacity = LyricBox.Opacity = compactContent;
         if (_view == View.Media)
         {
             MediaView.Width = w;
@@ -222,6 +234,13 @@ public partial class MainWindow
 
         MediaBigView.Height = Math.Max(h, PlayerHeight);
         PlayerLyricBox.Opacity = Math.Clamp((h - PlayerHeight) / PlayerLyricsHeight * 2 - 1, 0, 1);
+    }
+
+    bool TryGetMediaSpot(View view, out MediaSpot spot)
+    {
+        if (!MediaSpots.TryGetValue(view, out spot)) return false;
+        if (view == View.Media && CallMediaMini) spot = spot with { CoverLeft = 6 };
+        return true;
     }
 
     void AimCoverAtWholePixels(MediaSpot rest, double restWidth)

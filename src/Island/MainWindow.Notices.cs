@@ -13,21 +13,19 @@ public partial class MainWindow
     Action? _noticeOpen;
 
     void Notify(Glyph icon, SolidColorBrush tint, string title, string text, double seconds = NoticeSeconds, bool force = false, Glyph? from = null, bool warn = false,
-        Action? open = null)
+        Action? open = null, string? key = null, Func<bool>? isRelevant = null)
     {
-        if (_ringing && !force) return;
-
-        bool shown = _view == View.Notice;
-        Color color = tint.Color;
-        NoticeIcon.Kind = icon;
-        NoticeIcon.Fill = tint;
-        NoticeBack.Background = new SolidColorBrush(Color.FromArgb((byte)(color.A * NoticeBackgroundAlpha), color.R, color.G, color.B));
-        NoticeTitle.Text = title;
-        NoticeText.Text = text;
-        _noticeOpen = open;
-        ShowTransient(View.Notice, seconds, force);
-        if (shown) FadeIn(NoticeView);
-        AnimateNoticeIcon(icon, from, warn);
+        EnqueueNotification(View.Notice, seconds, () =>
+        {
+            Color color = tint.Color;
+            NoticeIcon.Kind = icon;
+            NoticeIcon.Fill = tint;
+            NoticeBack.Background = new SolidColorBrush(Color.FromArgb((byte)(color.A * NoticeBackgroundAlpha), color.R, color.G, color.B));
+            NoticeTitle.Text = title;
+            NoticeText.Text = text;
+            _noticeOpen = open;
+            AnimateNoticeIcon(icon, from, warn);
+        }, key ?? $"notice:{title}\n{text}", isRelevant, force);
     }
 
     void AnimateNoticeIcon(Glyph icon, Glyph? from, bool warn)

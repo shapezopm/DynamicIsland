@@ -59,7 +59,7 @@ public partial class MainWindow : Window
         [View.Discord] = new(342, 250, 34),
         [View.DiscordVoice] = new(340, 296, 34),
         [View.DiscordMessages] = new(340, 298, 34),
-        [View.DiscordPlugin] = new(342, 328, 34),
+        [View.DiscordPlugin] = new(342, 218, 34),
         [View.Loading] = new(118, 34, 17),
     };
 
@@ -176,7 +176,7 @@ public partial class MainWindow : Window
         _spotSprings = [_coverLeft, _coverTop, _coverSize, _barsRight, _barsCenterY, _barsWidth, _barsHeight, _barsOpen];
         _springs =
         [
-            _width, _height, _radius, _scale, _offsetY, _userScale, _topGap, _bubbleSplit, _bubbleScale, _bubbleRecord, _bubbleTimer, _bubbleShelf, _shelfBubbleWidth, _discordMusicWidth, _discordMusicX, _discordMusicY, _discordMusicOpacity,
+            _width, _height, _radius, _scale, _offsetY, _userScale, _topGap, _bubbleSplit, _bubbleScale, _bubbleRecord, _bubbleTimer, _bubbleShelf, _shelfBubbleWidth, _callVoiceSplit, _callVoiceScale,
             _shelfScroll, _weatherScroll, _weatherDaysScroll, _weatherPageSpring, _lookScroll, _updateNotesScroll, _volumeOvershoot, _leanX, _coverScale, _coverSnapX, _coverSnapY, _lyricSnapX, _lyricSnapY, .. _spotSprings,
         ];
         _timerTint = new SolidColorBrush(_orange.Color);
@@ -286,6 +286,7 @@ public partial class MainWindow : Window
     protected override void OnDpiChanged(DpiScale oldDpi, DpiScale newDpi)
     {
         base.OnDpiChanged(oldDpi, newDpi);
+        if (_view == View.Update) FitUpdatePage();
         ApplyShape();
     }
 
@@ -383,9 +384,20 @@ public partial class MainWindow : Window
         StartShapeLoop();
     }
 
-    bool CanHandleSpacePlayback() => !Native.IsPlaybackModifierDown && Island.IsMouseOver && _media.HasTrack
-        && _view is View.Media or View.Toast or View.MediaBig or View.Idle or View.IdleBig
-        && _panel is Panel.None or Panel.Player;
+    bool CanHandleSpacePlayback()
+    {
+        if (Native.IsPlaybackModifierDown || !_media.HasTrack || _textEntryOpen || _lyricsEditorOpen)
+            return false;
+        if (ShowsVoice && _view == View.Voice && _panel == Panel.None)
+            return Island.IsMouseOver || Bubble.IsMouseOver;
+        if (CallMediaPrimary && _view == View.Media && _panel == Panel.None)
+            return Island.IsMouseOver || Bubble.IsMouseOver || DiscordDetachedVoice.IsMouseOver;
+        if (ShowsVoice && _view == View.VoiceBig && _panel == Panel.Voice)
+            return Island.IsMouseOver;
+        return Island.IsMouseOver
+            && _view is View.Media or View.Toast or View.MediaBig or View.Idle or View.IdleBig
+            && _panel is Panel.None or Panel.Player;
+    }
 
     void QueueSpacePlayback()
     {
@@ -429,9 +441,9 @@ public partial class MainWindow : Window
             Safely(PollSystemState);
         }
         else if (_fullscreenRevealAllowed) Safely(() => UpdateFullscreenReveal());
+        if (_notifications.Count != 0) Safely(() => TryShowNextNotification());
         if (_ticks % ClockUpdateTicks == 0)
         {
-            Safely(ShowDiscordPluginNotice);
             Safely(ShowDiscordLinkNotice);
             Safely(UpdateClock);
             Safely(PollPower);
@@ -470,28 +482,39 @@ public partial class MainWindow : Window
             Panel.TimerSet => View.TimerSet,
             Panel.Record => _obs.Recording ? View.RecordBig : View.RecordSet,
             Panel.Timer when _countdown.IsActive => View.TimerBig,
-            Panel.Timer or Panel.Player => _media.HasTrack ? View.MediaBig : View.IdleBig,
+            Panel.Timer or Panel.Player => _media.HasTrack || HoldingCallTrack ? View.MediaBig : View.IdleBig,
             _ => _transientView ?? (_updater.State == Updater.Stage.Loading ? View.Loading
-                : ShowsVoice ? View.Voice : IsMediaActive ? View.Media : _obs.Recording ? View.Record : _countdown.IsActive ? View.Timer : View.Idle),
+                : CallMediaPrimary ? View.Media : ShowsVoice ? View.Voice : IsMediaActive ? View.Media : _obs.Recording ? View.Record : _countdown.IsActive ? View.Timer : View.Idle),
         };
         return target == View.Toast && !_media.HasTrack ? View.Idle : target;
     }
 
     void UpdateView()
     {
+        if (!CallMediaEnabled) _lastCallTrackAt = default;
+        else if (_media.HasTrack && _media.IsPlaying) _lastCallTrackAt = DateTime.UtcNow;
+        if (_panel is not (Panel.Discord or Panel.DiscordVoice or Panel.DiscordMessages or Panel.DiscordPlugin))
+            _discordSettingsFromCall = false;
         View target = TargetView();
         bool changed = target != _view;
         if (changed) MorphTo(target);
 
-        SyncDiscordMusic();
+        UpdateCallVoiceTarget();
         SyncEq();
         SyncRim();
         SyncCover();
-        if (!changed) return;
+        if (!changed)
+        {
+            if (_view is View.Voice or View.Media) UpdateTargets();
+            return;
+        }
         if (target == View.MediaBig)
         {
             StartSeekLoop();
-            RefreshSoundCloudHeart(force: true);
+            Dispatcher.BeginInvoke(DispatcherPriority.Background, () =>
+            {
+                if (_view == View.MediaBig) RefreshSoundCloudHeart();
+            });
         }
         if (target == View.Media) UpdateLyric(true);
     }
@@ -502,7 +525,7 @@ public partial class MainWindow : Window
         PillShape from = ShapeOf(previous);
         _view = target;
         if (target == View.MediaBig) UpdatePlayerLyrics(true);
-        else ShowLyricsPlaceholder(false);
+        else if (_playerLyricsBuild is not null) ClearPlayerLyricsRows();
         PillShape to = ShapeOf(target);
         bool weatherTransition = previous == View.Weather || target == View.Weather;
         bool rootMenuFade = !weatherTransition && (previous == View.Menu || target == View.Menu)
@@ -530,7 +553,7 @@ public partial class MainWindow : Window
 
     void MoveMediaSpot(View from, View to, PillShape size, double extraMs)
     {
-        bool had = MediaSpots.ContainsKey(from), has = MediaSpots.TryGetValue(to, out MediaSpot spot);
+        bool had = MediaSpots.ContainsKey(from), has = TryGetMediaSpot(to, out MediaSpot spot);
         if (has)
         {
             bool fresh = IsHidden(Shared);
@@ -538,7 +561,7 @@ public partial class MainWindow : Window
             for (int i = 0; i < _spotSprings.Length; i++)
             {
                 if (fresh) _spotSprings[i].Snap(places[i]);
-                else _spotSprings[i].Target = places[i];
+                _spotSprings[i].Target = places[i];
             }
         }
         ArtSpot.Cursor = to == View.MediaBig ? Cursors.Hand : null;
@@ -559,6 +582,7 @@ public partial class MainWindow : Window
 
     static bool IsPageOf(View parent, View page) =>
         parent == View.Discord && page is (View.DiscordVoice or View.DiscordMessages or View.DiscordPlugin) ||
+        parent == View.DiscordMessages && page == View.DiscordPlugin ||
         parent == View.Menu && MenuPages.Contains(page) || parent == View.Settings && SettingsPages.Contains(page);
 
     PillShape ShapeOf(View view) => view switch
@@ -566,10 +590,12 @@ public partial class MainWindow : Window
         View.Voice => PillShapes[view] with { Width = _voiceWidth },
         View.VoiceBig => PillShapes[view] with { Height = VoiceBigView.Height },
         View.Idle => PillShapes[view] with { Width = IdleView.Width },
-        View.Media => PillShapes[view] with { Width = _compactMediaWidth },
+        View.Media => PillShapes[view] with { Width = MediaPillWidth },
         View.MediaBig when _playerHasLyricRoom => PillShapes[view] with { Height = PlayerHeight + PlayerLyricsHeight },
         View.RecordSet => PillShapes[view] with { Width = RecordSetView.Width },
         View.Update => PillShapes[view] with { Height = UpdatePage.Height },
+        View.DiscordMessages => PillShapes[view] with { Height = DiscordMessagesPage.Height },
+        View.DiscordPlugin => PillShapes[view] with { Height = DiscordPluginPage.Height },
         View.Weather => PillShapes[view] with { Height = WeatherView.Height },
         View.Look => PillShapes[view] with { Height = LookView.Height },
         // Constant height: the shelf row stays in the menu, dimmed when the shelf is off.
@@ -586,6 +612,7 @@ public partial class MainWindow : Window
         if (force) _panel = Panel.None;
         else
         {
+            if (_activeNotification is { } active && active.View != view) return;
             if (_hiddenByFullscreen || _sentAway) return;
             if (_panel != Panel.None && !(view == View.Message && _panel == Panel.Player)) return;
             if (_transientView == View.Message && view != View.Message) return;
@@ -598,9 +625,14 @@ public partial class MainWindow : Window
 
     void EndTransient()
     {
+        if (StartNotificationFade()) return;
+        _transientTimeout.Cancel();
         bool returnToPlayer = _transientView == View.Message && _panel == Panel.Player;
+        if (_notificationLeaving && _activeNotification is { } outgoing) CollapseView(_views[outgoing.View]);
         _transientView = null;
+        ClearActiveNotification();
         SilenceAlarm();
+        if (TryShowNextNotification()) return;
         UpdateView();
         if (returnToPlayer && !_hovered) _collapseTimeout.Start(CollapseDelay);
     }
@@ -613,6 +645,7 @@ public partial class MainWindow : Window
         _panel = panel;
         _transientView = null;
         _transientTimeout.Cancel();
+        ClearActiveNotification();
         SilenceAlarm();
     }
 

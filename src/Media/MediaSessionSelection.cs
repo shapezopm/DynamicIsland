@@ -8,6 +8,7 @@ internal static class MediaSessionSelection
         T? Present(T? session) => session is null ? null : sessions.FirstOrDefault(item => Equals(item, session));
         if (Present(pinned) is { } pin) return pin;
         if (Present(latestPlaying) is { } latest && playing(latest)) return latest;
+        if (Present(previous) is { } previousPlaying && playing(previousPlaying)) return previousPlaying;
         if (Present(current) is { } selected && playing(selected)) return selected;
         if (sessions.FirstOrDefault(playing) is { } active) return active;
         if (Present(latestPlaying) is { } pausedLatest) return pausedLatest;

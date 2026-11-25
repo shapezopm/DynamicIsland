@@ -25,7 +25,7 @@ sealed class Updater
         && name.All(c => char.IsAsciiLetterOrDigit(c) || c is '-' or '_' or '.');
     const string AssetName = "DynamicIsland.exe";
     const string HashPrefix = "sha256:";
-    const int MaxNotes = 6;
+    const int MaxNotes = 40;
     const int BufferSize = 1 << 16;
     const int CleanUpAttempts = 10;
     internal const long MaxAssetBytes = 256L * 1024 * 1024;
@@ -97,6 +97,14 @@ sealed class Updater
     DateTime _checkedAt;
 
     public static Version CurrentVersion { get; }
+    static readonly Lazy<string[]> LocalReleaseNotes = new(() =>
+    {
+        using Stream? stream = Assembly.GetExecutingAssembly().GetManifestResourceStream("ReleaseNotes.md");
+        if (stream is null) return [];
+        using var reader = new StreamReader(stream);
+        return ParseNotes(reader.ReadToEnd());
+    });
+    internal static string[] BundledNotes => LocalReleaseNotes.Value;
 
     public event Action? Changed;
 

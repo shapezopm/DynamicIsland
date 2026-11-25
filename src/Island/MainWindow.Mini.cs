@@ -7,6 +7,7 @@ namespace DynamicIsland;
 public partial class MainWindow
 {
     readonly Digits _miniClockReference = new() { FontSize = 13.5, FontWeight = FontWeights.SemiBold };
+    bool _miniWeatherInBubble;
 
     void MiniSettings_Click(object sender, RoutedEventArgs e) => ShowPanel(Panel.MiniSettings);
 
@@ -66,7 +67,11 @@ public partial class MainWindow
         IdleWeekday.Visibility = parts.HasFlag(MiniComponent.Weekday) ? Visibility.Visible : Visibility.Collapsed;
         bool wantWeather = parts.HasFlag(MiniComponent.Weather);
         bool showWeather = wantWeather && !Settings.MiniWeatherSeparate && weather is not null;
+        bool weatherInBubble = wantWeather && Settings.MiniWeatherSeparate && weather is not null;
+        bool bubbleChanged = _miniWeatherInBubble != weatherInBubble;
+        _miniWeatherInBubble = weatherInBubble;
         SyncMiniBubble(weather);
+        if (bubbleChanged) UpdateTargets();
         IdleWeather.Visibility = showWeather ? Visibility.Visible : Visibility.Collapsed;
         IdleWeatherIcon.Kind = weather is { } report ? GlyphOf(report.Sky, report.Night) : Glyph.Cloud;
         IdleWeatherDegrees.Text = weather is { } value ? DescribeDegrees(value.Degrees) : "";
